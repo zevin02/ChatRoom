@@ -32,14 +32,13 @@ class Sock
             exit(1);
         }
     }
-    static void Bind(int sockfd,int port,string ip)
+    static void Bind(int sockfd,int port)
     {
         struct sockaddr_in local;
         memset(&local,0,sizeof(local));
         local.sin_family=AF_INET;
         local.sin_port=htons(port);
-        local.sin_addr.s_addr=inet_addr(ip.c_str());
-
+        local.sin_addr.s_addr=INADDR_ANY;
         if(bind(sockfd,(struct sockaddr*)&local,sizeof(local))<0)
         {
             perror("bind");
