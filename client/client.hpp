@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include "sock.hpp"
+#include"IO.hpp"
 using namespace std;
 class Client
 {
@@ -32,16 +33,8 @@ public:
             getline(cin,str);
             send(_sockfd,str.c_str(),str.size(),0);
             char buf[1024];
-            ssize_t size=recv(_sockfd,buf,sizeof(buf)-1,0);
-            if(size>0)
-            {
-                buf[size]=0;
-                cout<<"recv "<<buf<<endl;
-            }
-            else
-            {
-                cout<<"error"<<endl;
-            }
+            string recv_msg=RecvMsg(_sockfd,buf,sizeof(buf)-1);
+            cout<<recv_msg<<endl;
         }
     }
 };
