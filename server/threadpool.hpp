@@ -58,7 +58,6 @@ namespace ns_threadpool
                     ins = new ThreadPool<T>(); //创建一个，使用构造函数
                     //创建出来了一个单例之后，就直接给他初始化一个池就行了
                     ins->InitThreadPool();
-                    std::cout << "首次加载对象" << std::endl;
                 }
                 pthread_mutex_unlock(&lock);
             }

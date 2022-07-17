@@ -39,7 +39,6 @@ public:
             if (newsock == _sockfd)
             {
                 int newfd = Sock::Accept(_sockfd);
-                cout << "new client connect " << newfd << endl;
                 epl->AddFdNoBlock(newfd); //把这个新来的fd添加进去
             }
             else if (events[i].events & EPOLLIN) //处理任务，我们就放到线程池里面处理
