@@ -52,3 +52,31 @@ void FirResponseReSerialize(const string &jsonstring,FirstResponse& res)
     res.msg=root["msg"].asString();
 }
 
+//登录成功之后客户端发送的消息进行序列化
+string SecRequsetSerialize(const SecondRequset &req)
+{
+    Json::Value root;
+    root["type"]=req.type;
+    root["fdfrom"]=req.fdfrom;
+    root["fdto"]=req.fdto;
+    root["ifonline"]=req.ifonline;
+    Json::FastWriter writer;
+    string sendwriter=writer.write(root);
+    return sendwriter;
+}
+
+
+//对服务器接收到客户端的响应进行第二次反序列化
+
+void FirRequsetReSerialize(const string &jsonstring,SecondRequset& req)
+{
+    Json::Reader reader;
+    Json::Value root;
+    reader.parse(jsonstring,root);
+    req.type=root["type"].asInt();
+    req.fdfrom=root["fdfrom"].asInt();
+    req.fdto=root["fdto"].asInt();
+    req.ifonline=root["ifonline"].asBool();//查看是否在线
+}
+
+

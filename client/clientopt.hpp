@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include "protocol.hpp"
 #include "jsonmsg.hpp"
+#include"LoginChatRoom.hpp"
 void ClientLogin(FirstRequset &msg, int sockfd) //登录
 {
     cout << "------------------------------------" << endl;
@@ -24,6 +25,7 @@ void ClientLogin(FirstRequset &msg, int sockfd) //登录
     if (recvres.status == SUCCESS)
     {
         cout << recvres.msg << endl;
+        LoginChatRoom();//成功进入了聊天室,就可以执行一系列的操作了
     }
     else if (recvres.status == Failure)
     {
