@@ -7,6 +7,8 @@
 #include "IO.hpp"
 #include "protocol.hpp"
 #include "jsonmsg.hpp"
+#include"Myredis.hpp"
+
 using namespace std;
 
 namespace ns_task
@@ -17,6 +19,7 @@ namespace ns_task
         int _sockfd;
         int _epollfd;
         Epoll *_epl;
+        Myredis _mrs;
 
     public:
         Task() //无参构造，为了拿任务，不需要参数列表
@@ -45,8 +48,18 @@ namespace ns_task
         void ServerRegister(FirstRequset &req, int _sockfd)
         {
             //打开数据库，把数据存进去
-
+            //所有用户的表添加，这个用户的表添加
+            _mrs.connect();
+            
+            string buf="sadd Alluser "+req.nickname;
+            
+            _mrs.DoCommand(buf);
+            //2.注册一个我这个用户的表
+            buf="hmset "+req.nickname+" nickname "+req.nickname+" password "+req.password;
+            _mrs.DoCommand(buf);
             //注册成功
+            _mrs.disconnect();
+
             FirstResponse rep;
             rep.status = SUCCESS;
             rep.msg = "            注册成功";
@@ -56,6 +69,13 @@ namespace ns_task
         void ServerLogout(FirstRequset &req, int _sockfd)
         {
             //打开数据库，把对应的数据删除
+            _mrs.connect();
+            char buf[MAX_SIZE]={0};
+            memset(buf,0,sizeof(buf));
+            sprintf(buf,"srem AllUsr %s",req.nickname.c_str());
+            _mrs.DoCommand(buf);
+            _mrs.disconnect();
+
             FirstResponse rep;
             rep.status = SUCCESS;
             rep.msg = "            注销成功";
