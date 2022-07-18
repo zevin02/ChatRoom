@@ -10,7 +10,6 @@ string RecvMsg(int sockfd,char* buf,int size)//这个主要是客户端使用,�
     if(s>0)
     {
         buf[s]=0;
-        cout<<"recv "<<buf<<endl;
     }
     else 
     {
