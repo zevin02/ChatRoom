@@ -7,7 +7,7 @@
 #include "IO.hpp"
 #include "protocol.hpp"
 #include "jsonmsg.hpp"
-#include"Myredis.hpp"
+#include "Myredis.hpp"
 
 using namespace std;
 
@@ -39,23 +39,53 @@ namespace ns_task
         {
             //打开数据库，将账号和密码，进行匹配，成功返回进入下一步，失败返回错误
             FirstResponse rep;
-            rep.status = SUCCESS;
-            rep.msg = "            登录成功";
+            _mrs.connect();
+            string buf = "sismember Alluser " + req.nickname;
+            if (_mrs.isExist(buf))
+            {
+                // 我们输入的这个用户名存在，那么就继续处理，对密码进行验证，验证匹配，就删除
+                buf = "hget " + req.nickname + " password";
+                string realpassword = _mrs.GetData(buf);
+                if (req.password == realpassword)
+                {
+                    buf = "srem Alluser " + req.nickname;
+                    _mrs.disconnect();
+                    rep.status = SUCCESS;
+                    rep.msg = "            登录成功";
+                }
+                else
+                {
+                    rep.status = Failure;
+                    rep.msg = "            登录失败";
+                }
+            }
+            else
+            {
+                //对应的用户名不存在
+                rep.status = Failure;
+                rep.msg = "            登录失败";
+            }
+
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
 
+            if(rep.status==SUCCESS)
+            {
+                
+                HandlerLogin();
+            }
         }
         void ServerRegister(FirstRequset &req, int _sockfd)
         {
             //打开数据库，把数据存进去
             //所有用户的表添加，这个用户的表添加
             _mrs.connect();
-            
-            string buf="sadd Alluser "+req.nickname;
-            
+
+            string buf = "sadd Alluser " + req.nickname;
+
             _mrs.DoCommand(buf);
-            //2.注册一个我这个用户的表
-            buf="hmset "+req.nickname+" nickname "+req.nickname+" password "+req.password;
+            // 2.注册一个我这个用户的表
+            buf = "hmset " + req.nickname + " nickname " + req.nickname + " password " + req.password;
             _mrs.DoCommand(buf);
             //注册成功
             _mrs.disconnect();
@@ -69,16 +99,39 @@ namespace ns_task
         void ServerLogout(FirstRequset &req, int _sockfd)
         {
             //打开数据库，把对应的数据删除
-            _mrs.connect();
-            char buf[MAX_SIZE]={0};
-            memset(buf,0,sizeof(buf));
-            sprintf(buf,"srem AllUsr %s",req.nickname.c_str());
-            _mrs.DoCommand(buf);
-            _mrs.disconnect();
-
+            //输入要删除的id和密码，相同才能删除
+            //同时把它的数据库也删除掉
             FirstResponse rep;
-            rep.status = SUCCESS;
-            rep.msg = "            注销成功";
+
+            _mrs.connect();
+            string buf = "sismember Alluser " + req.nickname;
+            if (_mrs.isExist(buf))
+            {
+                // 我们输入的这个用户名存在，那么就继续处理，对密码进行验证，验证匹配，就删除
+                buf = "hget " + req.nickname + " password";
+                string realpassword = _mrs.GetData(buf);
+                if (req.password == realpassword)
+                {
+                    //删除数据库中Alluser里面的nickname
+                    buf = "srem Alluser " + req.nickname;
+                    _mrs.DelData(buf);
+                    _mrs.disconnect();
+                    rep.status = SUCCESS;
+                    rep.msg = "            注销成功";
+                }
+                else
+                {
+                    rep.status = Failure;
+                    rep.msg = "            注销失败";
+                }
+            }
+            else
+            {
+                //对应的用户名不存在
+                rep.status = Failure;
+                rep.msg = "            注销失败";
+            }
+
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }

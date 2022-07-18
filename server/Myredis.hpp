@@ -32,16 +32,24 @@ public:
         redisFree(c);
         freeReplyObject(pm_rr);
     }
-    bool isexist()
-    {
-    }
+   
     void DoCommand(string command)
     {
         pm_rr=(redisReply*)redisCommand(c,command.c_str());
     }
-    // void add(string key,string command)
-    // {
-    //     pm_rr=(redisReply*)redisCommand(c,command.c_str());
-    //     pm_rr->
-    // }
+
+    bool isExist(string command)//判断某个数据是否在这个数据库里面
+    {
+        pm_rr=(redisReply*)redisCommand(c,command.c_str());
+        return pm_rr->integer;//
+    }
+    string GetData(string command)//获得数据库里面的数据
+    {
+        pm_rr=(redisReply*)redisCommand(c,command.c_str());
+        return pm_rr->str;
+    }
+    void DelData(string command)//删除数据库里面的数据
+    {
+        pm_rr=(redisReply*)redisCommand(c,command.c_str());
+    }
 };
