@@ -52,3 +52,14 @@ void FirResponseReSerialize(const string &jsonstring,FirstResponse& res)
     res.msg=root["msg"].asString();
 }
 
+//对服务器接收到客户端的响应进行第二次反序列化
+void FirRequsetReSerialize(const string &jsonstring,SecondRequset& req)
+{
+    Json::Reader reader;
+    Json::Value root;
+    reader.parse(jsonstring,root);
+    req.type=root["type"].asInt();
+    req.fdfrom=root["fdfrom"].asInt();
+    req.fdto=root["fdto"].asInt();
+    req.ifonline=root["ifonline"].asBool();//查看是否在线
+}
