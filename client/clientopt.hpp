@@ -18,7 +18,7 @@ void ClientLogin(FirstRequset &msg, int sockfd) //登录
     send(sockfd, req.c_str(), req.size(), 0); //发送给服务器进行操作
                                               // FirstResponse recvmsg;
     //接收服务端发送的消息进行
-    
+    system("clear");
     FirstResponse resp= RecvReSerializeMsgForLogin(sockfd);
     if(resp.status==SUCCESS)
     {
@@ -40,6 +40,7 @@ void ClientRegister(FirstRequset &msg, int sockfd) //注册
     string req = FirRequsetSerialize(msg);
 
     //添加报头
+    system("clear");
 
     send(sockfd, req.c_str(), req.size(), 0); //发送给服务器进行操作
     //接收服务端发送过来的消息进行放序列化
@@ -57,6 +58,8 @@ void ClientLogout(FirstRequset &msg, int sockfd) //注销
     msg.logstatus = LOGINBEFORE;
 
     string req = FirRequsetSerialize(msg);
+    system("clear");
+
     send(sockfd, req.c_str(), req.size(), 0); //发送给服务器进行操作
     RecvReSerializeMsg(sockfd);
 }

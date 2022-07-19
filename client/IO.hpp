@@ -50,6 +50,7 @@ FirstResponse RecvReSerializeMsgForLogin(int sockfd)//对客户端进行登录�
     FirResponseReSerialize(tmp, recvres); //进行反序列化
     if (recvres.status == SUCCESS)
     {
+        
         cout << recvres.msg << endl;
 
     }
