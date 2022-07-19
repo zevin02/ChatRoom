@@ -52,6 +52,7 @@
 
 #include<string>
 #include<iostream>
+#include<queue>
 using namespace std;
 struct FirstRequset//第一次给服务器发送的消息
 {
@@ -73,6 +74,17 @@ struct FirstResponse//服务器第一次发送
     string msg;//服务器给客户端发送的响应,成功与否
     FirstResponse()=default;
 };
+
+
+struct UnReadMsg//用户的未读缓冲区,上线的时候先查看这个缓冲区，看是否有消息
+{
+    string owner;//给谁发送的 
+    string groupname;//来自哪个群
+    string sendfromwho;//谁发送的
+    queue<string> msg;//发送的消息队列
+    int size;//未读消息
+};
+
 
 
 
