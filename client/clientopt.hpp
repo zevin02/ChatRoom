@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include "protocol.hpp"
 #include "jsonmsg.hpp"
-#include"LoginChatRoom.hpp"
+#include "LoginChatRoom.hpp"
 void ClientLogin(FirstRequset &msg, int sockfd) //登录
 {
     cout << "------------------------------------" << endl;
@@ -12,25 +12,13 @@ void ClientLogin(FirstRequset &msg, int sockfd) //登录
     cin >> msg.nickname;
     cout << "请输入您的密码 :";
     cin >> msg.password;
+    msg.logstatus = LOGINBEFORE;
+
     string req = FirRequsetSerialize(msg);
     send(sockfd, req.c_str(), req.size(), 0); //发送给服务器进行操作
                                               // FirstResponse recvmsg;
-
-    FirstResponse recvres;
-    char buf[MAX_SIZE];
-    memset(buf, 0, sizeof(buf));
-    string tmp = RecvMsg(sockfd, buf, sizeof(buf) - 1);
-
-    FirResponseReSerialize(tmp, recvres); //进行反序列化
-    if (recvres.status == SUCCESS)
-    {
-        cout << recvres.msg << endl;
-        LoginChatRoom();//成功进入了聊天室,就可以执行一系列的操作了
-    }
-    else if (recvres.status == Failure)
-    {
-        cout << recvres.msg << endl;
-    }
+    //接收服务端发送的消息进行
+    RecvReSerializeMsg(sockfd);
 }
 void ClientRegister(FirstRequset &msg, int sockfd) //注册
 {
@@ -42,25 +30,17 @@ void ClientRegister(FirstRequset &msg, int sockfd) //注册
     cout << "请输入您的密码 :";
     cin >> msg.password;
 
+    msg.logstatus = LOGINBEFORE;
     //进行序列化，把消息发送给服务器
     string req = FirRequsetSerialize(msg);
+
+    //添加报头
+
     send(sockfd, req.c_str(), req.size(), 0); //发送给服务器进行操作
-
-    FirstResponse recvres;
-    char buf[MAX_SIZE];
-    memset(buf, 0, sizeof(buf));
-    string tmp = RecvMsg(sockfd, buf, sizeof(buf) - 1);
-
-    FirResponseReSerialize(tmp, recvres); //进行反序列化
-    if (recvres.status == SUCCESS)
-    {
-        cout << recvres.msg << endl;
-    }
-    else if (recvres.status == Failure)
-    {
-        cout << recvres.msg << endl;
-    }
+    //接收服务端发送过来的消息进行放序列化
+    RecvReSerializeMsg(sockfd);
 }
+
 void ClientLogout(FirstRequset &msg, int sockfd) //注销
 {
     cout << "------------------------------------" << endl;
@@ -69,45 +49,21 @@ void ClientLogout(FirstRequset &msg, int sockfd) //注销
     cin >> msg.nickname;
     cout << "请输入密码 :";
     cin >> msg.password;
+    msg.logstatus = LOGINBEFORE;
 
     string req = FirRequsetSerialize(msg);
     send(sockfd, req.c_str(), req.size(), 0); //发送给服务器进行操作
-    char buf[MAX_SIZE];
-    memset(buf, 0, sizeof(buf));
-    string recv_buf = RecvMsg(sockfd, buf, sizeof(buf) - 1);
-    //进行反序列化
-    FirstResponse rep;
-    FirResponseReSerialize(recv_buf, rep);
-
-    if (rep.status == SUCCESS)
-    {
-        cout << rep.msg << endl;
-    }
-    else if (rep.status == Failure)
-    {
-        cout << rep.msg << endl;
-    }
+    RecvReSerializeMsg(sockfd);
 }
 
 void ClientQuit(FirstRequset &msg, int sockfd) //退出
 {
+    msg.logstatus = LOGINBEFORE;
 
     string req = FirRequsetSerialize(msg);    //服务器帮助退出
     send(sockfd, req.c_str(), req.size(), 0); //发送给服务器进行操作
-    char buf[MAX_SIZE];
-    memset(buf, 0, sizeof(buf));
-    string recv_buf = RecvMsg(sockfd, buf, sizeof(buf) - 1);
-    //进行反序列化
-    FirstResponse rep;
-    FirResponseReSerialize(recv_buf, rep);
-    if (rep.status == SUCCESS)
-    {
-        cout << rep.msg << endl;
-    }
-    else if (rep.status == Failure)
-    {
-        cout << rep.msg << endl;
-    }
+    RecvReSerializeMsg(sockfd);
+
     cout << "------------------------------------" << endl;
     cout << "           欢迎下次使用              " << endl;
     cout << "------------------------------------" << endl;

@@ -12,9 +12,12 @@
 #define Failure      -1
 
 
+//退出登录
+#define LEFTLOAD     -1
+
 #define FRIEND_CHECK_MEMBER  1//查看是否在线
 #define FRIEND_ADD    2      
-#define FRIEND_DEK    3   
+#define FRIEND_DEL    3   
 #define FRIEND_CHAT   4
 #define FRIEND_CHECK_ONLINE       0
 
@@ -38,7 +41,9 @@
 #define GROUP_MANAGE_VIEWMEMBERLIST   16//查看群成员列表
 
 
-
+//用来区分发送的协议
+#define LOGINAFTER    0
+#define LOGINBEFORE   1
 
 
 
@@ -53,10 +58,20 @@
 using namespace std;
 struct FirstRequset//第一次给服务器发送的消息
 {
+    int logstatus;//登录状态
     int type;//对服务器的4种类型
     string nickname;//如果有注册请求,使用的名字
     string password;//密码
-    FirstRequset()=default;//生成默认构造函数
+    bool ifonline;//判断是否在线
+    int fdfrom;//来自谁
+    int fdto;//发给谁
+    string tonickname;//要操作的昵称
+    string message;//要发送的消息
+    // FirstRequset()=default;//生成默认构造函数
+    FirstRequset()
+    :ifonline(false)
+    {}
+    
 };
 
 struct FirstResponse//服务器第一次发送
@@ -68,10 +83,3 @@ struct FirstResponse//服务器第一次发送
 
 
 
-struct SecondRequset
-{
-    int type;//执行上面操作
-    int fdfrom;//发送者的套接字
-    int fdto;//接收者的fd
-    bool ifonline;//查看是否在线
-};
