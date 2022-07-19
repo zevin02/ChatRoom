@@ -32,24 +32,35 @@ public:
         redisFree(c);
         freeReplyObject(pm_rr);
     }
-   
-    void AddData(string command)//增加数据
+
+    void AddData(string command) //增加数据
     {
-        pm_rr=(redisReply*)redisCommand(c,command.c_str());
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
     }
 
-    bool isExist(string command)//判断某个数据是否在这个数据库里面
+    bool isExist(string command) //判断某个数据是否在这个数据库里面
     {
-        pm_rr=(redisReply*)redisCommand(c,command.c_str());
-        return pm_rr->integer;//
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
+        return pm_rr->integer; //
     }
-    string GetData(string command)//获得数据库里面的数据
+    string GetAData(string command) //获得数据库里面的数据
     {
-        pm_rr=(redisReply*)redisCommand(c,command.c_str());
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
         return pm_rr->str;
     }
-    void DelData(string command)//删除数据库里面的数据
+    string GetVectorString(string command)
     {
-        pm_rr=(redisReply*)redisCommand(c,command.c_str());
+        string ret;
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
+        for (int i = 0; i < pm_rr->elements; i++)
+        {
+            ret+= pm_rr->element[i]->str ; //获得str里面的每一个值
+            ret+=" ";
+        }
+        return ret;
+    }
+    void DelData(string command) //删除数据库里面的数据
+    {
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
     }
 };

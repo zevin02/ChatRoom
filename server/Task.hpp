@@ -48,7 +48,7 @@ namespace ns_task
             {
                 // 我们输入的这个用户名存在，那么就继续处理，对密码进行验证，验证匹配，就删除
                 buf = "hget " + req.nickname + " password";
-                string realpassword = _mrs.GetData(buf);
+                string realpassword = _mrs.GetAData(buf);
                 if (req.password == realpassword)
                 {
                     buf = "srem Alluser " + req.nickname;
@@ -108,7 +108,7 @@ namespace ns_task
             {
                 // 我们输入的这个用户名存在，那么就继续处理，对密码进行验证，验证匹配，就删除
                 buf = "hget " + req.nickname + " password";
-                string realpassword = _mrs.GetData(buf);
+                string realpassword = _mrs.GetAData(buf);
                 if (req.password == realpassword)
                 {
                     //删除数据库中Alluser里面的nickname
@@ -144,7 +144,7 @@ namespace ns_task
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
-        void ServerFRIENDADD(FirstRequset &req, int _sockfd) //添加好友
+        void ServerFRIENDADD(FirstRequset &req, int _sockfd) //添加好友，双方的好友数据库都要增加
         {
             FirstResponse rep;
             //在注册的用户里面去找，找到了添加，每找到，返回失败
@@ -154,7 +154,9 @@ namespace ns_task
             if (_mrs.isExist(buf))
             {
                 //存在就添加进去
-                buf = "sadd " + req.nickname + "_friend " + req.tonickname;
+                buf = "sadd " + req.nickname + "_friend " + req.tonickname;//
+                _mrs.AddData(buf);
+                buf = "sadd " + req.tonickname + "_friend " + req.nickname;//
                 _mrs.AddData(buf);
                 _mrs.disconnect();
                 rep.status = SUCCESS;
@@ -163,9 +165,52 @@ namespace ns_task
             else
             {
                 rep.status = Failure;
+                rep.msg = "      该用户不存在";
+            }
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerFRIENDDEL(FirstRequset &req, int _sockfd) //删除好友
+        {
+            FirstResponse rep;
+            //在注册的用户里面去找，找到了添加，每找到，返回失败
+            _mrs.connect();
+            //先检测要删除的用户是否存在,在nickname_friend里面找
+            string buf = "sismember " + req.nickname + "_friend " + req.tonickname;
+            if (_mrs.isExist(buf))
+            {
+                //存在就添加进去
+                buf = "srem " + req.nickname + "_friend " + req.tonickname;
+                _mrs.DelData(buf);
+                buf = "srem " + req.tonickname + "_friend " + req.nickname;
+                _mrs.DelData(buf);
+                _mrs.disconnect();
+                rep.status = SUCCESS;
+                rep.msg = "      删除成功";
+            }
+            else
+            {
+                rep.status = Failure;
                 rep.msg = "      该好友不存在";
             }
             string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void FriendCheckMember(int sockfd, FirstRequset &req)//查看有多少个好友
+        {
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "smembers "+req.nickname+"_friend";
+            
+            rep.msg=_mrs.GetVectorString(buf);
+
+
+            _mrs.disconnect();
+            rep.status=SUCCESS;
+            string msg = FirstResponseSerialize(rep);
+
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
@@ -217,14 +262,14 @@ namespace ns_task
                 switch (req.type)
                 {
                 case FRIEND_CHECK_MEMBER:
-                    // FriendCheckMember(_sockfd,req);
-                    cout << __FILE__ << __LINE__ << "CHECK FRIEND LIST" << endl;
+                    FriendCheckMember(_sockfd, req);
+                    // cout << __FILE__ << __LINE__ << "CHECK FRIEND LIST" << endl;
                     break;
                 case FRIEND_ADD:
                     ServerFRIENDADD(req, _sockfd);
-
                     break;
                 case FRIEND_DEL:
+                    ServerFRIENDDEL(req, _sockfd);
                     break;
                 case FRIEND_CHAT:
                     break;
