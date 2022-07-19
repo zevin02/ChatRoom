@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include "protocol.hpp"
-
+#include"IO.hpp"
 void loadmenu()
 {
     cout << "---------------------------------------" << endl;
@@ -33,21 +33,8 @@ void FriendAdd(int sockfd,FirstRequset&req)
     cin>>req.tonickname;
     string msg=FirRequsetSerialize(req);
     send(sockfd,msg.c_str(),msg.size(),0);
-    
-    FirstResponse recvres;
-    char buf[MAX_SIZE];
-    memset(buf, 0, sizeof(buf));
-    string tmp = RecvMsg(sockfd, buf, sizeof(buf) - 1);
 
-    FirResponseReSerialize(tmp, recvres); //进行反序列化
-    if (recvres.status == SUCCESS)
-    {
-        cout << recvres.msg << endl;
-    }
-    else if (recvres.status == Failure)
-    {
-        cout << recvres.msg << endl;
-    }
+    RecvReSerializeMsg(sockfd);
 }
 
 void LoginChatRoom(int sockfd,FirstRequset&sreq)//这个里面就有之前我们输入的名字和密码

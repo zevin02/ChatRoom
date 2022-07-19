@@ -18,7 +18,12 @@ void ClientLogin(FirstRequset &msg, int sockfd) //登录
     send(sockfd, req.c_str(), req.size(), 0); //发送给服务器进行操作
                                               // FirstResponse recvmsg;
     //接收服务端发送的消息进行
-    RecvReSerializeMsg(sockfd);
+    
+    FirstResponse resp= RecvReSerializeMsgForLogin(sockfd);
+    if(resp.status==SUCCESS)
+    {
+        LoginChatRoom(sockfd,msg);
+    }
 }
 void ClientRegister(FirstRequset &msg, int sockfd) //注册
 {

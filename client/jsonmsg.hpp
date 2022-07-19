@@ -39,6 +39,7 @@ void FirRequsetReSerialize(const string &jsonstring, FirstRequset &req)
     req.ifonline=root["ifonline"].asBool();//查看是否在线
     req.message=root["message"].asString();
     req.logstatus=root["logstatus"].asInt();
+    req.tonickname=root["tonickname"].asString();
 
 }
 

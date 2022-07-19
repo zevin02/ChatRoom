@@ -13,6 +13,5 @@ int main(int argc, char *argv[])
     Server* svr=new Server(port);
     svr->InitServer();
     svr->StartServer();
- 
     return 0;
 }

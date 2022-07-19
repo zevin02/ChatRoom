@@ -33,7 +33,7 @@ public:
         freeReplyObject(pm_rr);
     }
    
-    void DoCommand(string command)
+    void AddData(string command)//增加数据
     {
         pm_rr=(redisReply*)redisCommand(c,command.c_str());
     }

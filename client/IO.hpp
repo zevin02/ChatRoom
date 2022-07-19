@@ -39,3 +39,23 @@ void RecvReSerializeMsg(int sockfd)//接收服务端发送过来的消息进行�
         cout << recvres.msg << endl;
     }
 }
+
+FirstResponse RecvReSerializeMsgForLogin(int sockfd)//对客户端进行登录的后续操作
+{
+    FirstResponse recvres;
+    char buf[MAX_SIZE];
+    memset(buf, 0, sizeof(buf));
+    string tmp = RecvMsg(sockfd, buf, sizeof(buf) - 1);
+
+    FirResponseReSerialize(tmp, recvres); //进行反序列化
+    if (recvres.status == SUCCESS)
+    {
+        cout << recvres.msg << endl;
+
+    }
+    else if (recvres.status == Failure)
+    {
+        cout << recvres.msg << endl;
+    }
+    return recvres;
+}
