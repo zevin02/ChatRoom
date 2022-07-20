@@ -21,14 +21,14 @@ namespace ns_task
         int _epollfd;
         Epoll *_epl;
         Myredis _mrs;
-        ChatInfo* _chatinfo; //里面有两个链表
+        ChatInfo *_chatinfo; //里面有两个链表
     public:
         Task() //无参构造，为了拿任务，不需要参数列表
-            : _sockfd(-1), _epollfd(-1), _epl(nullptr),_chatinfo(nullptr)
+            : _sockfd(-1), _epollfd(-1), _epl(nullptr), _chatinfo(nullptr)
         {
         }
         //进行函数重载
-        Task(int sockfd, int epollfd, Epoll *epl, ChatInfo* chatinfo)
+        Task(int sockfd, int epollfd, Epoll *epl, ChatInfo *chatinfo)
             : _sockfd(sockfd), _epollfd(epollfd), _epl(epl), _chatinfo(chatinfo)
         {
         }
@@ -39,7 +39,7 @@ namespace ns_task
 
         //登录之后的操作
 
-        void ServerLogin(FirstRequset &req, int _sockfd)
+        void ServerLogin(FirstRequset &req, int _sockfd) //登录
         {
             //打开数据库，将账号和密码，进行匹配，成功返回进入下一步，失败返回错误
             FirstResponse rep;
@@ -56,6 +56,8 @@ namespace ns_task
                     _mrs.disconnect();
                     rep.status = SUCCESS;
                     rep.msg = "            登录成功";
+                    _chatinfo->User_Pushback(req.nickname, _sockfd); //用户上线之后就发送过去了
+                    _chatinfo->PrintOnlineUser();
                 }
                 else
                 {
@@ -75,7 +77,7 @@ namespace ns_task
 
             cout << __FILE__ << ":" << __LINE__ << "行" << rep.status << endl;
         }
-        void ServerRegister(FirstRequset &req, int _sockfd)
+        void ServerRegister(FirstRequset &req, int _sockfd) //注册账号
         {
             //打开数据库，把数据存进去
             //所有用户的表添加，这个用户的表添加
@@ -96,7 +98,7 @@ namespace ns_task
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
-        void ServerLogout(FirstRequset &req, int _sockfd)
+        void ServerLogout(FirstRequset &req, int _sockfd) //注销账号
         {
             //打开数据库，把对应的数据删除
             //输入要删除的id和密码，相同才能删除
@@ -135,7 +137,7 @@ namespace ns_task
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
-        void ServerQuit(FirstRequset &req, int _sockfd)
+        void ServerQuit(FirstRequset &req, int _sockfd) //退出进程
         {
             //退出
             FirstResponse rep;
@@ -214,7 +216,7 @@ namespace ns_task
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
-        void ServerLOADEXIT(FirstRequset &req, int sockfd, ChatInfo* _chatinfo)
+        void ServerLOADEXIT(FirstRequset &req, int sockfd, ChatInfo *_chatinfo) //退出登录
         {
             _chatinfo->User_Erase(req.nickname); //把这个节点删除掉
             FirstResponse rep;
@@ -222,6 +224,52 @@ namespace ns_task
             rep.msg = "          退出登录成功";
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerFRIENDCHECKONLINE(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo) //查看好友是否在线
+        {
+            //在在线用户链表里面找，找到就说明有在线，没找到说明不在线
+            FirstResponse rep;
+            if (_chatinfo->IsExist(req.tonickname))
+            {
+                //找到了
+                rep.status = SUCCESS;
+                rep.msg = "         该好友在线";
+            }
+            else
+            {
+                rep.status = Failure;
+                rep.msg = "       该好友不在线";
+            }
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerFriendCHAT(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo) //与好友进行聊天
+        {
+
+            FirstResponse rep;
+            //先判断是否在线，如果在线的话就直接发送了
+            if (_chatinfo->IsExist(req.tonickname))
+            {
+                //用户在线
+                //先给对方发送，谁要和你进行聊天
+                rep.msg = req.nickname + " wanna chat with you";//这个我们只希望第一次想要和它聊天的时候发送
+                rep.status = SUCCESS;
+                string msg = FirstResponseSerialize(rep);
+                int friendfd=_chatinfo->GetFriendFd(req.tonickname);
+                send(friendfd, msg.c_str(), msg.size(), 0);
+
+                //这里就是死循环发送消息，直到一方发送退出聊天的状态_exit就退出聊天
+                // while(1)
+                // {
+
+                // }
+            }
+            else
+            {
+                //用户不在线，我们就发送给数据库，等到对方上线之后先去读取这个
+            }
         }
 
         //服务器判断是哪一种接收格式
@@ -268,8 +316,7 @@ namespace ns_task
             else if (req.logstatus == LOGINAFTER) //这里就是用户登录成功之后
             {
 
-                _chatinfo->User_Pushback(req.nickname, _sockfd); //用户上线之后就添加进去,现在要处理的就是不能重复添加
-                _chatinfo->PrintOnlineUser();
+                // _chatinfo->PrintOnlineUser();
                 req.fdfrom = _sockfd;
                 cout << __FILE__ << __LINE__ << " req.fd=" << req.fdfrom << endl;
                 switch (req.type)
@@ -284,8 +331,10 @@ namespace ns_task
                     ServerFRIENDDEL(req, _sockfd);
                     break;
                 case FRIEND_CHAT:
+                    ServerFriendCHAT(req, _sockfd, _chatinfo);
                     break;
                 case FRIEND_CHECK_ONLINE:
+                    ServerFRIENDCHECKONLINE(req, _sockfd, _chatinfo);
                     break;
                 case GROUP_CREATE:
                     break;

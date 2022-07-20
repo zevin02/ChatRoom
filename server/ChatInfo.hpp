@@ -39,7 +39,7 @@ public:
         //当有用户
         
     }
-    void User_Pushback(string name,int fd)//用户信息链接上去
+    void User_Pushback(string& name,int& fd)//用户信息链接上去
     {
         bool flag=false;
         User newman(fd,name);
@@ -57,7 +57,7 @@ public:
         online_user.push_back(newman);//添加用户到在线用户链表里面
         
     }
-    void User_Erase(string name)
+    void User_Erase(string& name)
     {
         auto it=online_user.begin();
         while(it!=online_user.end())
@@ -80,6 +80,35 @@ public:
         cout<<__FILE__<<": "<<__LINE__<<" name : "<<(*it)._name<<" fd : "<<(*it)._fd<<endl;
         it++;
         }
+    }
+
+    bool IsExist(string& name)//判断某一个用户受否在线
+    {
+        auto it=online_user.begin();
+        while(it!=online_user.end())
+        {
+            if(it->_name==name)
+            {
+                return true;//发现了就返回真
+            }
+            it++;
+        }
+        return false;//没发现就返回假
+        
+    }
+    int GetFriendFd(string& name)
+    {
+        auto it=online_user.begin();
+        while(it!=online_user.end())
+        {
+            if(it->_name==name)
+            {
+                break;
+            }
+            it++;
+        }
+        return it->_fd;
+
     }
     ~ChatInfo()
     {
