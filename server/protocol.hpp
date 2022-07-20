@@ -18,6 +18,7 @@
 #define FRIEND_CHAT   4
 #define FRIEND_CHECK_ONLINE       0
 
+#define LEFTLOAD     -1
 
 
 //对群进行整体的处理

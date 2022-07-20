@@ -7,8 +7,9 @@
 #include "IO.hpp"
 #include "protocol.hpp"
 #include "jsonmsg.hpp"
-#include "Myredis.hpp"
+// #include "Myredis.hpp"
 #include <glog/logging.h>
+#include "ChatInfo.hpp"
 using namespace std;
 
 namespace ns_task
@@ -20,15 +21,15 @@ namespace ns_task
         int _epollfd;
         Epoll *_epl;
         Myredis _mrs;
-
+        ChatInfo* _chatinfo; //里面有两个链表
     public:
         Task() //无参构造，为了拿任务，不需要参数列表
-            : _sockfd(-1), _epollfd(-1), _epl(nullptr)
+            : _sockfd(-1), _epollfd(-1), _epl(nullptr),_chatinfo(nullptr)
         {
         }
         //进行函数重载
-        Task(int sockfd, int epollfd, Epoll *epl)
-            : _sockfd(sockfd), _epollfd(epollfd), _epl(epl)
+        Task(int sockfd, int epollfd, Epoll *epl, ChatInfo* chatinfo)
+            : _sockfd(sockfd), _epollfd(epollfd), _epl(epl), _chatinfo(chatinfo)
         {
         }
 
@@ -154,9 +155,9 @@ namespace ns_task
             if (_mrs.isExist(buf))
             {
                 //存在就添加进去
-                buf = "sadd " + req.nickname + "_friend " + req.tonickname;//
+                buf = "sadd " + req.nickname + "_friend " + req.tonickname; //
                 _mrs.AddData(buf);
-                buf = "sadd " + req.tonickname + "_friend " + req.nickname;//
+                buf = "sadd " + req.tonickname + "_friend " + req.nickname; //
                 _mrs.AddData(buf);
                 _mrs.disconnect();
                 rep.status = SUCCESS;
@@ -198,19 +199,28 @@ namespace ns_task
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
-        void FriendCheckMember(int sockfd, FirstRequset &req)//查看有多少个好友
+        void FriendCheckMember(int sockfd, FirstRequset &req) //查看有多少个好友
         {
             FirstResponse rep;
             _mrs.connect();
-            string buf = "smembers "+req.nickname+"_friend";
-            
-            rep.msg=_mrs.GetVectorString(buf);
+            string buf = "smembers " + req.nickname + "_friend";
 
+            rep.msg = _mrs.GetVectorString(buf);
 
             _mrs.disconnect();
-            rep.status=SUCCESS;
+            rep.status = SUCCESS;
             string msg = FirstResponseSerialize(rep);
 
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerLOADEXIT(FirstRequset &req, int sockfd, ChatInfo* _chatinfo)
+        {
+            _chatinfo->User_Erase(req.nickname); //把这个节点删除掉
+            FirstResponse rep;
+            rep.status = SUCCESS;
+            rep.msg = "          退出登录成功";
+            string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
@@ -255,15 +265,17 @@ namespace ns_task
                     ServerQuit(req, _sockfd); //退出进程
                 }
             }
-            else if (req.logstatus == LOGINAFTER)
+            else if (req.logstatus == LOGINAFTER) //这里就是用户登录成功之后
             {
+
+                _chatinfo->User_Pushback(req.nickname, _sockfd); //用户上线之后就添加进去,现在要处理的就是不能重复添加
+                _chatinfo->PrintOnlineUser();
                 req.fdfrom = _sockfd;
                 cout << __FILE__ << __LINE__ << " req.fd=" << req.fdfrom << endl;
                 switch (req.type)
                 {
                 case FRIEND_CHECK_MEMBER:
                     FriendCheckMember(_sockfd, req);
-                    // cout << __FILE__ << __LINE__ << "CHECK FRIEND LIST" << endl;
                     break;
                 case FRIEND_ADD:
                     ServerFRIENDADD(req, _sockfd);
@@ -284,6 +296,11 @@ namespace ns_task
                 case GROUP_CHECK:
                     break;
                 case GROUP_MANAGE:
+                    break;
+                case LEFTLOAD:
+                    cout << "quit" << endl;
+                    //在这里把对应的用户数据从里面删除掉
+                    ServerLOADEXIT(req, _sockfd, _chatinfo);
                     break;
                 }
             }

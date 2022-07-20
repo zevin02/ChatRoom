@@ -3,6 +3,7 @@
 using namespace ns_threadpool;
 #include "Task.hpp"
 using namespace ns_task;
+#include"ChatInfo.hpp"
 class Server
 {
 private:
@@ -10,19 +11,21 @@ private:
     int _sockfd;
     int _port;
     Epoll *epl;
-
+    ChatInfo* chatinfo;//里面包含一个在线用户链表
 public:
     Server(int port)
-        : _epollfd(-1), _sockfd(-1), _port(port),epl(nullptr)
+        : _epollfd(-1), _sockfd(-1), _port(port),epl(nullptr),chatinfo(nullptr)
     {
     }
     ~Server()
     {
         delete epl;
+        delete chatinfo;
     }
     void InitServer()
     {
         epl = new Epoll();
+        chatinfo=new ChatInfo();
         _epollfd = epl->Creat(10);
         _sockfd = Sock::Socket();
         Sock::SetSockOpt(_sockfd);
@@ -46,23 +49,8 @@ public:
                 //不是读事件
                 //这段代码不会被重复触发，因为我们设置的是et模式，非阻塞，所以我们要循环读取
                 //因为它不会二次触发数据，所以就要求我们一次性把数据都读完，我们只能循环，非阻塞，没有数据的时候退出就行了
-                Task t(newsock, _epollfd, epl);
+                Task t(newsock, _epollfd, epl,chatinfo);
                 ThreadPool<Task>::GetInstance()->PushTask(t); //单例模式
-                string str = "";
-                memset(buf, 0, sizeof(buf));
-
-                //这就是读的主要逻辑
-                // recv_from_client(newsock, buf, str, _epollfd,epl);
-
-                // if (str.size())
-                //     str.pop_back();
-                // // fflush(stdin);
-                // cout << str << endl;
-
-                // //这里就处理客户端发来的任务
-
-                // send(events[i].data.fd, str.c_str(), str.size(), 0);
-                // cout << endl; //循环结束之后，再回车即可
             }
         }
     }
