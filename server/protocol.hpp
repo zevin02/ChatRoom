@@ -12,6 +12,9 @@
 #define Failure      -1
 
 
+
+
+#define CHECKUNREADMESSAGE   -2
 #define FRIEND_CHECK_MEMBER  1//查看是否在线
 #define FRIEND_ADD    2      
 #define FRIEND_DEL    3   
@@ -77,14 +80,14 @@ struct FirstResponse//服务器第一次发送
 };
 
 
-struct UnReadMsg//用户的未读缓冲区,上线的时候先查看这个缓冲区，看是否有消息
-{
-    string owner;//给谁发送的 
-    string groupname;//来自哪个群
-    string sendfromwho;//谁发送的
-    queue<string> msg;//发送的消息队列
-    int size;//未读消息
-};
+// struct UnReadMsg//用户的未读缓冲区,上线的时候先查看这个缓冲区，看是否有消息
+// {
+//     string owner;//给谁发送的 
+//     string groupname;//来自哪个群
+//     string sendfromwho;//谁发送的
+//     queue<string> msg;//发送的消息队列
+//     int size;//未读消息
+// };
 
 
 

@@ -7,7 +7,6 @@
 #include "IO.hpp"
 #include "protocol.hpp"
 #include "jsonmsg.hpp"
-// #include "Myredis.hpp"
 #include <glog/logging.h>
 #include "ChatInfo.hpp"
 using namespace std;
@@ -255,27 +254,43 @@ namespace ns_task
                 //用户在线
                 //先给对方发送，谁要和你进行聊天
                 // rep.msg = req.nickname + " wanna chat with you";//这个我们只希望第一次想要和它聊天的时候发送
-                rep.msg=req.nickname+" : "+req.message;
+                rep.msg = req.nickname + " : " + req.message;
                 rep.status = SUCCESS;
                 string msg = FirstResponseSerialize(rep);
-                int friendfd=_chatinfo->GetFriendFd(req.tonickname);
-                
-                cout<<__FILE__<<__LINE__<<"对方的fd为: "<<friendfd<<"  "<<msg<<endl; 
+                int friendfd = _chatinfo->GetFriendFd(req.tonickname);
+
+                cout << __FILE__ << __LINE__ << "对方的fd为: " << friendfd << "  " << msg << endl;
                 send(friendfd, msg.c_str(), msg.size(), 0);
-
-                //这里就是死循环发送消息，直到一方发送退出聊天的状态_exit就退出聊天
-                // while(1)
-                // {
-
-                // }
             }
             else
             {
                 //用户不在线，我们就发送给数据库，等到对方上线之后先去读取这个
-                cout<<"不在线"<<endl;
+                //这里我们把数据修改一下
+                string buff = req.nickname + " send message to you : " + req.message; //这个就是给没上线的好友发送的消息
+                _chatinfo->UnReadBuf_Pushback(req.tonickname, buff);                  //不管对方有没有上线，只要往这里面加数据就可以了
+                cout << "不在线" << endl;
             }
         }
 
+        void ServerCheckUnReadMsg(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo)//查看未读取消息
+        {
+            FirstResponse rep;
+            //进去之后先去用户未读缓冲区里面查看
+            int size = _chatinfo->UnReadMsgNum(req.nickname);
+            rep.msg = "您有" + to_string(size) + "条消息\n";
+            rep.status = SUCCESS;
+            if (size)
+            {
+                while (size--)
+                {
+                    rep.msg += _chatinfo->GetUnReadMsg(req.nickname);
+                    rep.msg += "\n";
+                }
+                cout<<__FILE__<<__LINE__<<rep.msg<<endl;
+                string msg = FirstResponseSerialize(rep);
+                send(_sockfd, msg.c_str(), msg.size(), 0); //先告诉服务器有几条消息
+            }
+        }
         //服务器判断是哪一种接收格式
         int Run() //执行任务
         {
@@ -325,6 +340,9 @@ namespace ns_task
                 cout << __FILE__ << __LINE__ << " req.fd=" << req.fdfrom << endl;
                 switch (req.type)
                 {
+                case CHECKUNREADMESSAGE:
+                    ServerCheckUnReadMsg(req, _sockfd, _chatinfo);
+                    break;
                 case FRIEND_CHECK_MEMBER:
                     FriendCheckMember(_sockfd, req);
                     break;
