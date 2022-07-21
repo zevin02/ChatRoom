@@ -15,6 +15,8 @@
 //退出登录
 #define LEFTLOAD     -1
 
+
+#define CHECKUNREADMESSAGE   -2
 #define FRIEND_CHECK_MEMBER  1//查看是否在线
 #define FRIEND_ADD    2      
 #define FRIEND_DEL    3   

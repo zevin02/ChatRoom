@@ -3,12 +3,13 @@
 #include "protocol.hpp"
 #include "IO.hpp"
 
-void loadmenu()
+void loadmenu(FirstRequset& req)
 {
     cout << "---------------------------------------" << endl;
-    cout << "     Enjoy              Yourself       " << endl;
+    cout << "     Enjoy      ***"<<req.nickname<<"***     Yourself       " << endl;
     cout << "---------------------------------------" << endl;
     cout << "        Start Use The ChatRoom         " << endl;
+    cout << "          [-2]查看未读消息              " << endl;
     cout << "   [1]查看好友        [2]添加好友       " << endl;
     cout << "   [3]删除好友        [4]与好友进行聊天 " << endl;
     cout << "         [0]查看好友在线情况            " << endl;
@@ -77,23 +78,16 @@ void FriendCHECKONLINE(int sockfd, FirstRequset &req) //查看好友是否在线
 void *Read(void *args)
 {
     pthread_detach(pthread_self());
-    // pthread_mutex_t lock;
-    // pthread_mutex_init(&lock, nullptr);
-
     FirstRequset req = *(FirstRequset *)args;
 
-    // pthread_mutex_lock(&lock);
     while (1)
-        // cout<<endl;
     {
-        FirstResponse resp =RecvReSerializeMsgForLogin(req.fdfrom);
-        if(resp.msg.find("exit")!=string::npos)
+        FirstResponse resp = RecvReSerializeMsgForLogin(req.fdfrom);
+        if (resp.msg.find("exit") != string::npos)
         {
             break;
         }
     }
-    // pthread_mutex_unlock(&lock);
-    // pthread_mutex_destroy(&lock);
 }
 
 void FriendCHAT(int sockfd, FirstRequset &req) //聊天
@@ -110,7 +104,6 @@ void FriendCHAT(int sockfd, FirstRequset &req) //聊天
         cin >> req.message; //发送的消息
         string msg = FirRequsetSerialize(req);
         send(sockfd, msg.c_str(), msg.size(), 0);
-        // RecvReSerializeMsg(req.fdfrom);
         if (req.message == "exit") //发送这个就退出了
         {
             //退出
@@ -119,19 +112,28 @@ void FriendCHAT(int sockfd, FirstRequset &req) //聊天
     }
 }
 
+void CheckUnReadMsg(int sockfd, FirstRequset &req)
+{
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    RecvReSerializeMsg(sockfd);
+    sleep(2);
+    // system("clear");
+}
+
 void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我们输入的名字和密码
 {
     sreq.ifonline = true;
     sreq.logstatus = LOGINAFTER; //设置为登录后的状态
     do
     {
-        loadmenu();
-        // pthread_t reader;
-        // sreq.fdfrom = sockfd;
-        // pthread_create(&reader, nullptr, Read, (void *)&sreq); //一进来就要去接收
+        loadmenu(sreq);
         cin >> sreq.type;
         switch (sreq.type)
         {
+        case CHECKUNREADMESSAGE:
+            CheckUnReadMsg(sockfd, sreq);
+            break;
         case FRIEND_CHECK_MEMBER:
             FriendCheckMember(sockfd, sreq); //查看好友有多少
             break;
@@ -142,7 +144,6 @@ void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我
             FriendDel(sockfd, sreq); //删除好友
             break;
         case FRIEND_CHAT:
-            // cout << "111111" << __FILE__ << "    " << __LINE__ << endl;
             FriendCHAT(sockfd, sreq); //与好友进行聊天
             break;
         case FRIEND_CHECK_ONLINE:
