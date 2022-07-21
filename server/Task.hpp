@@ -254,10 +254,13 @@ namespace ns_task
             {
                 //用户在线
                 //先给对方发送，谁要和你进行聊天
-                rep.msg = req.nickname + " wanna chat with you";//这个我们只希望第一次想要和它聊天的时候发送
+                // rep.msg = req.nickname + " wanna chat with you";//这个我们只希望第一次想要和它聊天的时候发送
+                rep.msg=req.nickname+" : "+req.message;
                 rep.status = SUCCESS;
                 string msg = FirstResponseSerialize(rep);
                 int friendfd=_chatinfo->GetFriendFd(req.tonickname);
+                
+                cout<<__FILE__<<__LINE__<<"对方的fd为: "<<friendfd<<"  "<<msg<<endl; 
                 send(friendfd, msg.c_str(), msg.size(), 0);
 
                 //这里就是死循环发送消息，直到一方发送退出聊天的状态_exit就退出聊天
@@ -269,6 +272,7 @@ namespace ns_task
             else
             {
                 //用户不在线，我们就发送给数据库，等到对方上线之后先去读取这个
+                cout<<"不在线"<<endl;
             }
         }
 
