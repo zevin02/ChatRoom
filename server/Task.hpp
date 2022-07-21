@@ -244,7 +244,7 @@ namespace ns_task
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
-        void ServerFriendCHAT(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo) //与好友进行聊天
+        void ServerFriendCHATONLINE(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo) //与在线好友进行聊天
         {
 
             FirstResponse rep;
@@ -272,7 +272,8 @@ namespace ns_task
             }
         }
 
-        void ServerCheckUnReadMsg(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo)//查看未读取消息
+        
+        void ServerCheckUnReadMsg(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo) //查看未读取消息
         {
             FirstResponse rep;
             //进去之后先去用户未读缓冲区里面查看
@@ -286,7 +287,7 @@ namespace ns_task
                     rep.msg += _chatinfo->GetUnReadMsg(req.nickname);
                     rep.msg += "\n";
                 }
-                cout<<__FILE__<<__LINE__<<rep.msg<<endl;
+                cout << __FILE__ << __LINE__ << rep.msg << endl;
                 string msg = FirstResponseSerialize(rep);
                 send(_sockfd, msg.c_str(), msg.size(), 0); //先告诉服务器有几条消息
             }
@@ -352,11 +353,15 @@ namespace ns_task
                 case FRIEND_DEL:
                     ServerFRIENDDEL(req, _sockfd);
                     break;
-                case FRIEND_CHAT:
-                    ServerFriendCHAT(req, _sockfd, _chatinfo);
+                case FRIEND_CHAT_ONLINE:
+                    // ServerFriendCHATONLINE(req, _sockfd, _chatinfo);
+                    // break;
+                case FRIEND_CHAT_UNONLINE:
+                    ServerFriendCHATONLINE(req, _sockfd, _chatinfo);
                     break;
                 case FRIEND_CHECK_ONLINE:
                     ServerFRIENDCHECKONLINE(req, _sockfd, _chatinfo);
+                    // ServerFriendCHATUNONLINE(req, _sockfd, _chatinfo);
                     break;
                 case GROUP_CREATE:
                     break;
