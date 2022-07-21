@@ -17,7 +17,7 @@ string RecvMsg(int sockfd,char* buf,int size)//这个主要是客户端使用,�
     }
     else 
     {
-        cout<<"error"<<endl;
+        cout<<"error"<<endl;//接收端错误
 
     }
     string msg=buf;
