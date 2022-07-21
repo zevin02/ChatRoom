@@ -5,13 +5,26 @@
 
 void loadmenu(FirstRequset& req)
 {
+
+ cout<<" ____ _   _    _  _____ ____   ___   ___  __  __ "<<endl;
+ cout<<"/ ___| | | |  / \\|_   _|  _ \\ / _ \\ / _ \\|  \\/  |"<<endl;
+cout<<"| |   | |_| | / _ \\ | | | |_) | | | | | | | |\\/| |"<<endl;
+cout<<"| |___|  _  |/ ___ \\| | |  _ <| |_| | |_| | |  | |"<<endl;
+cout<<" \\____|_| |_/_/   \\_\\_| |_| \\_\\___/ \\___/|_|  |_|"<<endl;
+
+
+
+
+
+
     cout << "---------------------------------------" << endl;
     cout << "     Enjoy      ***"<<req.nickname<<"***     Yourself       " << endl;
     cout << "---------------------------------------" << endl;
     cout << "        Start Use The ChatRoom         " << endl;
     cout << "          [-2]查看未读消息              " << endl;
     cout << "   [1]查看好友        [2]添加好友       " << endl;
-    cout << "   [3]删除好友        [4]与好友进行聊天 " << endl;
+    cout << "   [3]删除好友        [4]与在线好友进行聊天 " << endl;
+    cout<<"            [8]与不在线好友聊天"<<endl;
     cout << "         [0]查看好友在线情况            " << endl;
     cout << "   [5]创建群          [6]加入群         " << endl;
     cout << "   [7]退出群          [9]查看所有群     " << endl;
@@ -90,11 +103,15 @@ void *Read(void *args)
     }
 }
 
-void FriendCHAT(int sockfd, FirstRequset &req) //聊天
+void FriendCHATONLINE(int sockfd, FirstRequset &req) //聊天
 {
+    //聊天之前我们要先知道用问在线与否，在线就聊天
+    //这里先发送获取它是否在线
     pthread_t reader;
     req.fdfrom = sockfd;
+
     pthread_create(&reader, nullptr, Read, (void *)&req); //一进来就要去接收
+    
     cout << "请输入您要进行聊天的好友: ";
 
     cin >> req.tonickname;
@@ -112,7 +129,26 @@ void FriendCHAT(int sockfd, FirstRequset &req) //聊天
     }
 }
 
-void CheckUnReadMsg(int sockfd, FirstRequset &req)
+void FriendCHATUNONLINE(int sockfd, FirstRequset &req) //聊天
+{
+    cout << "请输入您要进行聊天的好友: ";
+    cin >> req.tonickname;
+    while (1)
+    {
+        // cout << "请发送您要发送的消息: ";
+        cin >> req.message; //发送的消息
+        string msg = FirRequsetSerialize(req);
+        send(sockfd, msg.c_str(), msg.size(), 0);
+        if (req.message == "exit") //发送这个就退出了
+        {
+            //退出
+            break;
+        }
+    }
+}
+
+
+void CheckUnReadMsg(int sockfd, FirstRequset &req)//查看未读消息
 {
     string msg = FirRequsetSerialize(req);
     send(sockfd, msg.c_str(), msg.size(), 0);
@@ -144,11 +180,13 @@ void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我
             FriendDel(sockfd, sreq); //删除好友
             break;
         case FRIEND_CHAT:
-            FriendCHAT(sockfd, sreq); //与好友进行聊天
+            FriendCHATONLINE(sockfd, sreq); //与好友进行聊天
             break;
         case FRIEND_CHECK_ONLINE:
             FriendCHECKONLINE(sockfd, sreq); //查看好友是否在线
             break;
+        case FRIEND_CHAT_UNONLINE:
+            FriendCHATUNONLINE(sockfd,sreq);
         case GROUP_CREATE:
             break;
         case GROUP_ADD:

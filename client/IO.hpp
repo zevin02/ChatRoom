@@ -53,12 +53,12 @@ FirstResponse RecvReSerializeMsgForLogin(int sockfd)//对客户端进行登录�
     if (recvres.status == SUCCESS)
     {
         
-        cout << recvres.msg << endl;
+        cout << "               "<<recvres.msg << endl;
 
     }
     else if (recvres.status == Failure)
     {
-        cout << recvres.msg << endl;
+        cout << "               "<<recvres.msg << endl;
     }
     return recvres;
 }
