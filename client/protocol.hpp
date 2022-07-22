@@ -30,7 +30,7 @@
 
 #define GROUP_CREATE  5    //创建一个群
 #define GROUP_ADD     6    //申请加入一个群
-#define GROUP_QUIT    7    //退出一个群
+#define GROUP_QUIT    7    //退出一个群,非群管理
 #define GROUP_CHECK   9    //查看加入了哪些群
 
 

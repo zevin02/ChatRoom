@@ -180,6 +180,34 @@ void GroupCHECKMEMBERLIST(int sockfd, FirstRequset &req) //查看群成员列表
     sleep(5);
     system("clear");
 }
+
+void GroupQUIT(int sockfd, FirstRequset &req) //退出一个群
+{
+    cout<<"请输入你要退出的群名称： "<<endl;
+    cin >> req.groupname;
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    RecvReSerializeMsg(sockfd);
+    sleep(2);
+    system("clear");
+}
+
+
+void GroupADDMANAGER(int sockfd,FirstRequset& req)//添加群管理员
+{
+    cout<<"请输入您想要操作的群: ";
+    cin>>req.groupname;
+    cout<<"请输入您想要添加为管理员的成员名: ";
+    cin>>req.tonickname;
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    RecvReSerializeMsg(sockfd);
+    sleep(2);
+    system("clear");
+}
+
+
+
 void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我们输入的名字和密码
 {
     sreq.ifonline = true;
@@ -215,14 +243,17 @@ void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我
             break;
         case GROUP_ADD:
             break;
-        case GROUP_QUIT:
+        case GROUP_QUIT://退出一个群
+            GroupQUIT(sockfd,sreq);
             break;
-        case GROUP_CHECK:
-            //查看已经加入的群
+        case GROUP_CHECK://查看已经加入的群
             GroupCHECK(sockfd, sreq);
             break;
         case GROUP_MANAGE_VIEWMEMBERLIST://查看群成员
             GroupCHECKMEMBERLIST(sockfd, sreq);
+            break;
+        case GROUP_MANAGE_ADDMANAGER://添加一个群管理
+            GroupADDMANAGER(sockfd,sreq);
             break;
         case LEFTLOAD:
             LOADEXIT(sockfd, sreq);
