@@ -60,7 +60,7 @@ public:
         struct epoll_event events[10];
         while (1)
         {
-            int ret = epl->Wait(events);
+            int ret = epl->Wait(events);//我们客户端发送的消息都会在这里被触发
             EpollEt(events, ret);
         }
     }

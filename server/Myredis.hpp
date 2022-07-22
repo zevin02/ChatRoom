@@ -48,7 +48,7 @@ public:
         pm_rr = (redisReply *)redisCommand(c, command.c_str());
         return pm_rr->str;
     }
-    string GetVectorString(string command)
+    string GetVectorString(string command)//里面是一个数组存储字符串
     {
         string ret;
         pm_rr = (redisReply *)redisCommand(c, command.c_str());
@@ -62,5 +62,23 @@ public:
     void DelData(string command) //删除数据库里面的数据
     {
         pm_rr = (redisReply *)redisCommand(c, command.c_str());
+    }
+    string GetHashData(string command)//在hash表里面获得字符串
+    {
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
+        string s=pm_rr->str;
+        string ret;
+        for(int i=0;i<s.size();i++)
+        {
+            if(s[i]=='|')
+            {
+                ret+=" ";
+            }
+            else
+            {
+                ret+=s[i];
+            }
+        }
+        return ret;
     }
 };

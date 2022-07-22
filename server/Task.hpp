@@ -272,7 +272,6 @@ namespace ns_task
             }
         }
 
-        
         void ServerCheckUnReadMsg(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo) //查看未读取消息
         {
             FirstResponse rep;
@@ -292,6 +291,50 @@ namespace ns_task
                 send(_sockfd, msg.c_str(), msg.size(), 0); //先告诉服务器有几条消息
             }
         }
+
+        void ServerGROUPCREATE(FirstRequset &req, int _sockfd) //创建群
+        {
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "sadd ALLgroup " + req.groupname; //往所有的群消息里面添加
+            _mrs.AddData(buf);
+            buf = "hmset " + req.groupname + " lord " + req.nickname + " administrator " + req.nickname + " member " + req.nickname; //这个群的详细详细
+            _mrs.AddData(buf);
+            //我的群列表也要加上这个群
+            buf = "sadd " + req.nickname + "_group " + req.groupname; //我的个人信息里面也要加上这个群
+            _mrs.AddData(buf);
+            _mrs.disconnect();
+            rep.status = SUCCESS;
+            rep.status = SUCCESS;
+            rep.msg = "            创建成功";
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerGROUPCHECK(FirstRequset &req, int _sockfd) //查看群
+        {
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "smembers " + req.nickname + "_group";
+
+            rep.msg = _mrs.GetVectorString(buf);
+
+            _mrs.disconnect();
+            rep.status = SUCCESS;
+            string msg = FirstResponseSerialize(rep);
+
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+        void ServerGroupCHECKMEMBERLIST(FirstRequset &req, int _sockfd) //查看群成员信息
+        {
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "hget " + req.groupname + " member";
+            rep.msg = _mrs.GetHashData(buf); //这样里面就可以存放
+            rep.status = SUCCESS;
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
         //服务器判断是哪一种接收格式
         int Run() //执行任务
         {
@@ -301,10 +344,7 @@ namespace ns_task
             memset(buf, 0, sizeof(buf));
             int req_type;
 
-            //这就是读的主要逻辑,第一次读
-            // recv_from_client(_sockfd, (char*)&req_type, str, _epollfd, _epl,4);//先读前4个字节
-
-            recv_from_client(_sockfd, buf, str, _epollfd, _epl);
+            recv_from_client(_sockfd, buf, str, _epollfd, _epl); //发送的都在这里被触发
 
             if (str.size())
                 str.pop_back();
@@ -336,7 +376,6 @@ namespace ns_task
             else if (req.logstatus == LOGINAFTER) //这里就是用户登录成功之后
             {
 
-                // _chatinfo->PrintOnlineUser();
                 req.fdfrom = _sockfd;
                 cout << __FILE__ << __LINE__ << " req.fd=" << req.fdfrom << endl;
                 switch (req.type)
@@ -354,24 +393,24 @@ namespace ns_task
                     ServerFRIENDDEL(req, _sockfd);
                     break;
                 case FRIEND_CHAT_ONLINE:
-                    // ServerFriendCHATONLINE(req, _sockfd, _chatinfo);
-                    // break;
                 case FRIEND_CHAT_UNONLINE:
                     ServerFriendCHATONLINE(req, _sockfd, _chatinfo);
                     break;
                 case FRIEND_CHECK_ONLINE:
                     ServerFRIENDCHECKONLINE(req, _sockfd, _chatinfo);
-                    // ServerFriendCHATUNONLINE(req, _sockfd, _chatinfo);
                     break;
                 case GROUP_CREATE:
+                    ServerGROUPCREATE(req, _sockfd);
                     break;
                 case GROUP_ADD:
                     break;
                 case GROUP_QUIT:
                     break;
                 case GROUP_CHECK:
+                    ServerGROUPCHECK(req, _sockfd);
                     break;
-                case GROUP_MANAGE:
+                case GROUP_MANAGE_VIEWMEMBERLIST://查看群成员列表
+                    ServerGroupCHECKMEMBERLIST(req, _sockfd);
                     break;
                 case LEFTLOAD:
                     cout << "quit" << endl;
