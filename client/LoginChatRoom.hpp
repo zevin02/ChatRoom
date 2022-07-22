@@ -175,7 +175,7 @@ void GroupCHECKMEMBERLIST(int sockfd, FirstRequset &req) //查看群成员列表
     cin >> req.groupname;
     string msg = FirRequsetSerialize(req);
     send(sockfd, msg.c_str(), msg.size(), 0);
-    cout<<req.groupname<<"群的成员列表如下"<<endl;
+    cout << req.groupname << "群的成员列表如下" << endl;
     RecvReSerializeMsg(sockfd);
     sleep(5);
     system("clear");
@@ -183,7 +183,7 @@ void GroupCHECKMEMBERLIST(int sockfd, FirstRequset &req) //查看群成员列表
 
 void GroupQUIT(int sockfd, FirstRequset &req) //退出一个群
 {
-    cout<<"请输入你要退出的群名称： "<<endl;
+    cout << "请输入你要退出的群名称： " << endl;
     cin >> req.groupname;
     string msg = FirRequsetSerialize(req);
     send(sockfd, msg.c_str(), msg.size(), 0);
@@ -192,13 +192,12 @@ void GroupQUIT(int sockfd, FirstRequset &req) //退出一个群
     system("clear");
 }
 
-
-void GroupADDMANAGER(int sockfd,FirstRequset& req)//添加群管理员
+void GroupADDMANAGER(int sockfd, FirstRequset &req) //添加群管理员
 {
-    cout<<"请输入您想要操作的群: ";
-    cin>>req.groupname;
-    cout<<"请输入您想要添加为管理员的成员名: ";
-    cin>>req.tonickname;
+    cout << "请输入您想要操作的群: ";
+    cin >> req.groupname;
+    cout << "请输入您想要添加为管理员的成员名: ";
+    cin >> req.tonickname;
     string msg = FirRequsetSerialize(req);
     send(sockfd, msg.c_str(), msg.size(), 0);
     RecvReSerializeMsg(sockfd);
@@ -206,7 +205,16 @@ void GroupADDMANAGER(int sockfd,FirstRequset& req)//添加群管理员
     system("clear");
 }
 
-
+void GroupADD(int sockfd, FirstRequset &req) //添加一个群
+{
+    cout << "请输入您要加入的群: ";
+    cin >> req.groupname;
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    RecvReSerializeMsg(sockfd);
+    sleep(2);
+    system("clear");
+}
 
 void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我们输入的名字和密码
 {
@@ -242,18 +250,19 @@ void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我
             GroupCREATE(sockfd, sreq);
             break;
         case GROUP_ADD:
+            GroupADD(sockfd, sreq);
             break;
-        case GROUP_QUIT://退出一个群
-            GroupQUIT(sockfd,sreq);
+        case GROUP_QUIT: //退出一个群
+            GroupQUIT(sockfd, sreq);
             break;
-        case GROUP_CHECK://查看已经加入的群
+        case GROUP_CHECK: //查看已经加入的群
             GroupCHECK(sockfd, sreq);
             break;
-        case GROUP_MANAGE_VIEWMEMBERLIST://查看群成员
+        case GROUP_MANAGE_VIEWMEMBERLIST: //查看群成员
             GroupCHECKMEMBERLIST(sockfd, sreq);
             break;
-        case GROUP_MANAGE_ADDMANAGER://添加一个群管理
-            GroupADDMANAGER(sockfd,sreq);
+        case GROUP_MANAGE_ADDMANAGER: //添加一个群管理
+            GroupADDMANAGER(sockfd, sreq);
             break;
         case LEFTLOAD:
             LOADEXIT(sockfd, sreq);
