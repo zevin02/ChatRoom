@@ -330,11 +330,132 @@ namespace ns_task
             FirstResponse rep;
             _mrs.connect();
             string buf = "hget " + req.groupname + " member";
-            rep.msg = _mrs.GetHashData(buf); //这样里面就可以存放
+            vector<string> ll = _mrs.GetHashData(buf);
+
+            for (int i = 0; i < ll.size(); i++)
+            {
+                rep.msg += (ll[i] + "   ");
+            }
+
             rep.status = SUCCESS;
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
+
+        void ServerGROUPQUIT(FirstRequset &req, int _sockfd) //退出一个群,现在默认它不是退出的那个群的群主或群管理员
+        {
+            FirstResponse rep;
+            //在群列表里面去找，找到了添加，每找到，返回失败
+            _mrs.connect();
+            //先检测要删除的群是否存在,在nickname_group里面找
+            string buf = "sismember " + req.nickname + "_group " + req.groupname;
+            if (_mrs.isExist(buf))
+            {
+                //存在就添加进去
+                buf = "srem " + req.nickname + "_group " + req.groupname;
+                _mrs.DelData(buf);
+                //在该群的群成员里面也要获取到，并且删除这个信息,再重新设置这个数据
+                buf = "hget " + req.groupname + " member";
+
+                vector<string> ll = _mrs.GetHashData(buf);
+                //获得到了群成员数组，我们遍历这个数组，找到我们的名字，并把它删除掉
+                auto it = ll.begin();
+                while (it != ll.end())
+                {
+                    if (*it == req.nickname)
+                    {
+                        ll.erase(it); //把这个数据从里面删除掉
+                        break;
+                    }
+                }
+                //重新把这个数据插入到数据库里面
+                string buffer;
+                for (int i = 0; i < ll.size(); i++)
+                {
+                    buffer += ll[i];
+                    if (i < ll.size() - 1)
+                        buffer += "|";
+                }
+                buf = "hset " + req.groupname + " member " + buffer;
+                _mrs.SetData(buf);
+                _mrs.disconnect();
+                rep.status = SUCCESS;
+                rep.msg = "      删除成功";
+            }
+            else
+            {
+                rep.status = Failure;
+                rep.msg = "      该群不存在";
+            }
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerGroupADDMANAGER(FirstRequset &req, int _sockfd)
+        {
+            //删除一个群管理
+            // 1.先从我的群列表看看有没有这个群
+            // 2.再查看我是不是这个群的群主
+            // 3.获取群管理员的全部,如果有这个人的话，就不要添加了，如果没有这个人的话，就添加上去
+            // 4.最后添加
+            FirstResponse rep;
+            string buf = "sismember " + req.nickname + "_group " + req.groupname;
+            _mrs.connect();
+            if (_mrs.isExist(buf))
+            {
+                //群主只有一个
+                buf = "hget " + req.groupname + " lord";
+                if (req.nickname == _mrs.GetAData(buf))
+                {
+                    //是群主
+                    //查看是不是这个成员
+                    buf = "hget " + req.groupname + " member";
+                    string memberlist = _mrs.GetAData(buf);           //这里面存放的就是所有的群成员
+                    buf = "hget " + req.groupname + " administrator"; //获得群管理员列表
+                    string administratorlist = _mrs.GetAData(buf);
+
+                    if (memberlist.find(req.tonickname) != string::npos && administratorlist.find(req.tonickname) == string::npos)
+                    {
+                        //是群成员但不是群管理员，就可以进行添加了
+                        buf = "hget " + req.groupname + " administrator";
+                        vector<string> adlist = _mrs.GetHashData(buf);
+                        //往这个list里面添加数据
+                        adlist.push_back(req.tonickname);
+                        //再把它重新设置进去
+                        string buffer;
+                        for (int i = 0; i < adlist.size(); i++)
+                        {
+                            buffer += adlist[i];
+                            if (i < adlist.size() - 1)
+                                buffer += "|";
+                        }
+                        buf = "hset " + req.groupname + " administrator " + buffer;
+                        _mrs.SetData(buf);
+                        rep.status = SUCCESS;
+                        rep.msg = "添加成功";
+                    }
+                    else
+                    {
+                        rep.status = Failure;
+                        rep.msg = "      操作失败";
+                    }
+                }
+                else
+                {
+                    rep.status = Failure;
+                    rep.msg = "      您不是该群的群主，所以无法添加群管理员";
+                }
+            }
+            else
+            {
+                rep.status = Failure;
+                rep.msg = "      该群不存在";
+            }
+            _mrs.disconnect();
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
         //服务器判断是哪一种接收格式
         int Run() //执行任务
         {
@@ -383,35 +504,40 @@ namespace ns_task
                 case CHECKUNREADMESSAGE:
                     ServerCheckUnReadMsg(req, _sockfd, _chatinfo);
                     break;
-                case FRIEND_CHECK_MEMBER:
+                case FRIEND_CHECK_MEMBER: //查看好友列表
                     FriendCheckMember(_sockfd, req);
                     break;
-                case FRIEND_ADD:
+                case FRIEND_ADD: //添加好友
                     ServerFRIENDADD(req, _sockfd);
                     break;
-                case FRIEND_DEL:
+                case FRIEND_DEL: //删除好友
                     ServerFRIENDDEL(req, _sockfd);
                     break;
-                case FRIEND_CHAT_ONLINE:
+                case FRIEND_CHAT_ONLINE: //与好友聊天
                 case FRIEND_CHAT_UNONLINE:
                     ServerFriendCHATONLINE(req, _sockfd, _chatinfo);
                     break;
-                case FRIEND_CHECK_ONLINE:
+                case FRIEND_CHECK_ONLINE: //查看好友在线情况
                     ServerFRIENDCHECKONLINE(req, _sockfd, _chatinfo);
                     break;
-                case GROUP_CREATE:
+                case GROUP_CREATE: //创建一个群
                     ServerGROUPCREATE(req, _sockfd);
                     break;
-                case GROUP_ADD:
+                case GROUP_ADD: //申请加入一个群
                     break;
-                case GROUP_QUIT:
+                case GROUP_QUIT: //退出一个群
+                    ServerGROUPQUIT(req, _sockfd);
                     break;
                 case GROUP_CHECK:
                     ServerGROUPCHECK(req, _sockfd);
                     break;
-                case GROUP_MANAGE_VIEWMEMBERLIST://查看群成员列表
+                case GROUP_MANAGE_VIEWMEMBERLIST: //查看群成员列表
                     ServerGroupCHECKMEMBERLIST(req, _sockfd);
                     break;
+                case GROUP_MANAGE_ADDMANAGER: //添加一个群管理
+                    ServerGroupADDMANAGER(req, _sockfd);
+                    break;
+
                 case LEFTLOAD:
                     cout << "quit" << endl;
                     //在这里把对应的用户数据从里面删除掉

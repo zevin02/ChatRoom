@@ -3,6 +3,7 @@
 #include <string>
 using namespace std;
 #include <hiredis/hiredis.h>
+#include <vector>
 class Myredis
 {
 private:
@@ -48,14 +49,14 @@ public:
         pm_rr = (redisReply *)redisCommand(c, command.c_str());
         return pm_rr->str;
     }
-    string GetVectorString(string command)//里面是一个数组存储字符串
+    string GetVectorString(string command) //里面是一个数组存储字符串
     {
         string ret;
         pm_rr = (redisReply *)redisCommand(c, command.c_str());
         for (int i = 0; i < pm_rr->elements; i++)
         {
-            ret+= pm_rr->element[i]->str ; //获得str里面的每一个值
-            ret+=" ";
+            ret += pm_rr->element[i]->str; //获得str里面的每一个值
+            ret += " ";
         }
         return ret;
     }
@@ -63,22 +64,33 @@ public:
     {
         pm_rr = (redisReply *)redisCommand(c, command.c_str());
     }
-    string GetHashData(string command)//在hash表里面获得字符串
+    vector<string> GetHashData(string command) //在hash表里面获得字符串
     {
         pm_rr = (redisReply *)redisCommand(c, command.c_str());
-        string s=pm_rr->str;
-        string ret;
-        for(int i=0;i<s.size();i++)
+        string s = pm_rr->str;
+        vector<string> ret;
+        int j = 0;
+        string buf = "";
+        for (int i = 0; i < s.size(); i++)
         {
-            if(s[i]=='|')
+            if (s[i] == '|')
             {
-                ret+=" ";
+                string l = buf;
+                ret.push_back(l); //尾插上这个字符串
+                buf = "";
             }
             else
             {
-                ret+=s[i];
+                buf.push_back(s[i]);
             }
         }
+        ret.push_back(buf);
         return ret;
+    }
+
+    void SetData(string command)
+    {
+        //设置数据库里面的数据
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
     }
 };
