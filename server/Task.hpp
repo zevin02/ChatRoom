@@ -410,6 +410,34 @@ namespace ns_task
             _mrs.SetData(buf); //这样就添加进去了
         }
 
+        void HashFieldDel(string key,string field,string value)//删除哈希表里面的数据
+        {
+            string buf = "hget " + key + " " + field;
+            vector<string> list = _mrs.GetHashData(buf); //这个list里面存放的就是field里面对应的所有数据
+            
+            //找到那个value，把那个数据给删除掉
+            auto it=list.begin();
+            while(it!=list.end())
+            {
+                if(*it==value)
+                {
+                    
+                }
+            }
+
+
+            //再把它重新设置进去
+            string buffer;
+            for (int i = 0; i < list.size(); i++)
+            {
+                buffer += list[i];
+                if (i < list.size() - 1)
+                    buffer += "|";
+            }
+            buf = "hset " + key + " " + field + " " + buffer;
+            _mrs.SetData(buf); //这样就添加进去了
+        }
+
         void ServerGroupADDMANAGER(FirstRequset &req, int _sockfd) //添加管理员
         {
             //删除一个群管理
@@ -435,21 +463,7 @@ namespace ns_task
 
                     if (memberlist.find(req.tonickname) != string::npos && administratorlist.find(req.tonickname) == string::npos)
                     {
-                        //是群成员但不是群管理员，就可以进行添加了
-                        // buf = "hget " + req.groupname + " administrator";
-                        // vector<string> adlist = _mrs.GetHashData(buf);
-                        // //往这个list里面添加数据
-                        // adlist.push_back(req.tonickname);
-                        // //再把它重新设置进去
-                        // string buffer;
-                        // for (int i = 0; i < adlist.size(); i++)
-                        // {
-                        //     buffer += adlist[i];
-                        //     if (i < adlist.size() - 1)
-                        //         buffer += "|";
-                        // }
-                        // buf = "hset " + req.groupname + " administrator " + buffer;
-                        // _mrs.SetData(buf);
+
                         HashFieldAdd(req.groupname, "administrator", req.tonickname); //添加群管理
                         rep.status = SUCCESS;
                         rep.msg = "添加成功";
@@ -498,10 +512,48 @@ namespace ns_task
                 rep.status = Failure;
                 rep.msg = "       添加失败";
             }
-            cout << __LINE__ << "   " << rep.msg << endl;
             _mrs.disconnect();
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerGroupDELMANAGER(FirstRequset &req, int _sockfd) //删除一个群管理
+        {
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "sismember ALLgroup " + req.groupname;
+            if (_mrs.isExist(buf)) //先检查这个群是否存在
+            {
+                //检查我有没有这个群
+                buf = "sismember " + req.nickname + "_group " + req.groupname;
+                if (_mrs.isExist(buf))
+                {
+                    //我加了这个群
+                    //查看我是不是这个群的管理员
+                    buf = "hget " + req.groupname + " administrator"; //获得群管理员列表
+                    string administratorlist = _mrs.GetAData(buf);
+                    if(administratorlist.find(req.tonickname)!=string::npos)//如果它是群管理,在里面找到名字
+                    {
+                        //在里面找到了名字
+                        //把群管理这个数据给删除掉
+
+
+
+                    }
+                }
+                else
+                {
+                    //我没加这个群
+                    rep.status = Failure;
+                    rep.msg = "       添加失败";
+                }
+            }
+            else
+            {
+                //这个群不存在
+                rep.status = Failure;
+                rep.msg = "       添加失败";
+            }
         }
 
         //服务器判断是哪一种接收格式
@@ -585,6 +637,9 @@ namespace ns_task
                     break;
                 case GROUP_MANAGE_ADDMANAGER: //添加一个群管理
                     ServerGroupADDMANAGER(req, _sockfd);
+                    break;
+                case GROUP_MANAGE_DELMANAGER: //添加一个群管理
+                    ServerGroupDELMANAGER(req, _sockfd);
                     break;
                 case LEFTLOAD:
                     cout << "quit" << endl;
