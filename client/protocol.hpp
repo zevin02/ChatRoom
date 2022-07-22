@@ -36,11 +36,11 @@
 
 
 //对某一个群进行操作，在group_manage里面
-#define GROUP_MANAGE_DELMEMBER    11//删除一个群成员
-#define GROUP_MANAGE_ADDMANAGER   12//添加一个管理员
-#define GROUP_MANAGE_DEL          13//作为群主解散一个群
-#define GROUP_MANAGE_CHAT         14//进行群聊天
-#define GROUP_MANAGE_DELMANAGER   15//删除群管理
+#define GROUP_MANAGE_DELMEMBER        11//删除一个群成员
+#define GROUP_MANAGE_ADDMANAGER       12//添加一个管理员
+#define GROUP_MANAGE_DEL              13//作为群主解散一个群
+#define GROUP_MANAGE_CHAT             14//进行群聊天
+#define GROUP_MANAGE_DELMANAGER       15//删除群管理
 #define GROUP_MANAGE_VIEWMEMBERLIST   16//查看群成员列表
 
 

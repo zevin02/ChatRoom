@@ -20,11 +20,11 @@ void loadmenu(FirstRequset &req)
     cout << "   [3]删除好友                 [-2]查看未读消息" << endl;
     cout << "  [**您在聊天的时候请先查看对方是否在线，再选择下列的操作**]" << endl;
     cout << "     [4]与在线好友进行聊天        [8]与不在线好友聊天" << endl;
-    cout << "                [0]查看好友在线情况            " << endl;
+    cout << "                [0]查看好友在线情况              " << endl;
     cout << "   [5]创建群                   [6]加入群         " << endl;
-    cout << "   [7]退出群                   [9]查看所有群     " << endl;
+    cout << "   [7]退出群                   [9]查看所有群      " << endl;
     cout << "   [10]对群进行处理            [16]查看群成员信息  " << endl;
-    cout << "               [-1]退出登录                   " << endl;
+    cout << "   [12]设置群管理              [-1]退出登录        " << endl;
     cout << "---------------------------------------" << endl;
     cout << "请进行您的选择: ";
 }
@@ -215,7 +215,18 @@ void GroupADD(int sockfd, FirstRequset &req) //添加一个群
     sleep(2);
     system("clear");
 }
-
+void GroupDELMANAGER(int sockfd, FirstRequset &req) //添加群管理员
+{
+    cout << "请输入您想要操作的群: ";
+    cin >> req.groupname;
+    cout << "请输入您想要删除的管理员的成员名: ";
+    cin >> req.tonickname;
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    RecvReSerializeMsg(sockfd);
+    sleep(2);
+    system("clear");
+}
 void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我们输入的名字和密码
 {
     sreq.ifonline = true;
@@ -263,6 +274,9 @@ void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我
             break;
         case GROUP_MANAGE_ADDMANAGER: //添加一个群管理
             GroupADDMANAGER(sockfd, sreq);
+            break;
+        case GROUP_MANAGE_DELMANAGER: //添加一个群管理
+            GroupDELMANAGER(sockfd, sreq);
             break;
         case LEFTLOAD:
             LOADEXIT(sockfd, sreq);
