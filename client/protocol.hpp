@@ -42,6 +42,7 @@
 #define GROUP_MANAGE_CHAT             14//进行群聊天
 #define GROUP_MANAGE_DELMANAGER       15//删除群管理
 #define GROUP_MANAGE_VIEWMEMBERLIST   16//查看群成员列表
+#define GROUP_DELMEMBER               17//群主和群管理把群成员给删除掉
 
 
 //用来区分发送的协议

@@ -12,10 +12,10 @@ void loadmenu(FirstRequset &req)
     cout << "| |___|  _  |/ ___ \\| | |  _ <| |_| | |_| | |  | |" << endl;
     cout << " \\____|_| |_/_/   \\_\\_| |_| \\_\\___/ \\___/|_|  |_|" << endl;
 
-    cout << "---------------------------------------" << endl;
+    cout << "----------------------------------------------------------" << endl;
     cout << "     Enjoy      ***" << req.nickname << "***     Yourself       " << endl;
-    cout << "---------------------------------------" << endl;
-    cout << "        Start Use The ChatRoom         " << endl;
+    cout << "----------------------------------------------------------" << endl;
+    cout << "             Start Use The ChatRoom         " << endl;
     cout << "   [1]查看好友                 [2]添加好友       " << endl;
     cout << "   [3]删除好友                 [-2]查看未读消息" << endl;
     cout << "  [**您在聊天的时候请先查看对方是否在线，再选择下列的操作**]" << endl;
@@ -25,7 +25,8 @@ void loadmenu(FirstRequset &req)
     cout << "   [7]退出群                   [9]查看所有群      " << endl;
     cout << "   [10]对群进行处理            [16]查看群成员信息  " << endl;
     cout << "   [12]设置群管理              [-1]退出登录        " << endl;
-    cout << "---------------------------------------" << endl;
+    cout << "   [15]删除群管理              [17]删除群成员      " << endl;
+    cout << "--------------------------------------------------------" << endl;
     cout << "请进行您的选择: ";
 }
 
@@ -215,11 +216,25 @@ void GroupADD(int sockfd, FirstRequset &req) //添加一个群
     sleep(2);
     system("clear");
 }
-void GroupDELMANAGER(int sockfd, FirstRequset &req) //添加群管理员
+void GroupDELMANAGER(int sockfd, FirstRequset &req) //删除群管理员
 {
     cout << "请输入您想要操作的群: ";
     cin >> req.groupname;
     cout << "请输入您想要删除的管理员的成员名: ";
+    cin >> req.tonickname;
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    RecvReSerializeMsg(sockfd);
+    sleep(2);
+    system("clear");
+}
+
+void GroupDELMEMBER(int sockfd, FirstRequset &req) //群主和群管理把群成员删除掉
+{
+    //这里我们默认，删除的对象只是一个普通群成员
+    cout << "请输入您想要操作的群: ";
+    cin >> req.groupname;
+    cout << "请输入您想要删除的群成员的成员名: ";
     cin >> req.tonickname;
     string msg = FirRequsetSerialize(req);
     send(sockfd, msg.c_str(), msg.size(), 0);
@@ -275,8 +290,11 @@ void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我
         case GROUP_MANAGE_ADDMANAGER: //添加一个群管理
             GroupADDMANAGER(sockfd, sreq);
             break;
-        case GROUP_MANAGE_DELMANAGER: //添加一个群管理
+        case GROUP_MANAGE_DELMANAGER: //删除一个群管理
             GroupDELMANAGER(sockfd, sreq);
+            break;
+        case GROUP_DELMEMBER: //删除一个群成员
+            GroupDELMEMBER(sockfd, sreq);
             break;
         case LEFTLOAD:
             LOADEXIT(sockfd, sreq);
