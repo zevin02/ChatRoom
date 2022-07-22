@@ -19,6 +19,7 @@ string FirRequsetSerialize(const FirstRequset &req)
     root["ifonline"] = req.ifonline;//是否在线
     root["tonickname"]=req.tonickname;
     root["message"]=req.message;
+    root["groupname"]=req.groupname;
     Json::FastWriter writer;
     string sendwriter = writer.write(root);
     return sendwriter;
@@ -40,6 +41,7 @@ void FirRequsetReSerialize(const string &jsonstring, FirstRequset &req)
     req.message=root["message"].asString();
     req.logstatus=root["logstatus"].asInt();
     req.tonickname=root["tonickname"].asString();
+    req.groupname=root["groupname"].asString();
 
 }
 

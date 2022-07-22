@@ -32,7 +32,7 @@
 #define GROUP_ADD     6    //申请加入一个群
 #define GROUP_QUIT    7    //退出一个群
 #define GROUP_CHECK   9    //查看加入了哪些群
-#define GROUP_MANAGE  10   //后续处理群的各种操作
+
 
 
 //对某一个群进行操作，在group_manage里面
@@ -68,8 +68,9 @@ struct FirstRequset//第一次给服务器发送的消息
     bool ifonline;//判断是否在线
     int fdfrom;//来自谁
     int fdto;//发给谁
-    string tonickname;//要操作的昵称
+    string tonickname;//要操作的好友昵称
     string message;//要发送的消息
+    string groupname;//要操作的群名
     // FirstRequset()=default;//生成默认构造函数
     FirstRequset()
     :ifonline(false)

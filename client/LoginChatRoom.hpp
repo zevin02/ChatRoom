@@ -3,33 +3,28 @@
 #include "protocol.hpp"
 #include "IO.hpp"
 
-void loadmenu(FirstRequset& req)
+void loadmenu(FirstRequset &req)
 {
 
- cout<<" ____ _   _    _  _____ ____   ___   ___  __  __ "<<endl;
- cout<<"/ ___| | | |  / \\|_   _|  _ \\ / _ \\ / _ \\|  \\/  |"<<endl;
-cout<<"| |   | |_| | / _ \\ | | | |_) | | | | | | | |\\/| |"<<endl;
-cout<<"| |___|  _  |/ ___ \\| | |  _ <| |_| | |_| | |  | |"<<endl;
-cout<<" \\____|_| |_/_/   \\_\\_| |_| \\_\\___/ \\___/|_|  |_|"<<endl;
-
-
-
-
-
+    cout << " ____ _   _    _  _____ ____   ___   ___  __  __ " << endl;
+    cout << "/ ___| | | |  / \\|_   _|  _ \\ / _ \\ / _ \\|  \\/  |" << endl;
+    cout << "| |   | |_| | / _ \\ | | | |_) | | | | | | | |\\/| |" << endl;
+    cout << "| |___|  _  |/ ___ \\| | |  _ <| |_| | |_| | |  | |" << endl;
+    cout << " \\____|_| |_/_/   \\_\\_| |_| \\_\\___/ \\___/|_|  |_|" << endl;
 
     cout << "---------------------------------------" << endl;
-    cout << "     Enjoy      ***"<<req.nickname<<"***     Yourself       " << endl;
+    cout << "     Enjoy      ***" << req.nickname << "***     Yourself       " << endl;
     cout << "---------------------------------------" << endl;
     cout << "        Start Use The ChatRoom         " << endl;
-    cout << "          [-2]查看未读消息              " << endl;
-    cout << "   [1]查看好友        [2]添加好友       " << endl;
-    cout << "   [3]删除好友        [4]与在线好友进行聊天 " << endl;
-    cout<<"            [8]与不在线好友聊天"<<endl;
-    cout << "         [0]查看好友在线情况            " << endl;
-    cout << "   [5]创建群          [6]加入群         " << endl;
-    cout << "   [7]退出群          [9]查看所有群     " << endl;
-    cout << "          [10]对群进行处理               " << endl;
-    cout << "          [-1]退出登录                   " << endl;
+    cout << "   [1]查看好友                 [2]添加好友       " << endl;
+    cout << "   [3]删除好友                 [-2]查看未读消息" << endl;
+    cout << "  [**您在聊天的时候请先查看对方是否在线，再选择下列的操作**]" << endl;
+    cout << "     [4]与在线好友进行聊天        [8]与不在线好友聊天" << endl;
+    cout << "                [0]查看好友在线情况            " << endl;
+    cout << "   [5]创建群                   [6]加入群         " << endl;
+    cout << "   [7]退出群                   [9]查看所有群     " << endl;
+    cout << "   [10]对群进行处理            [16]查看群成员信息  " << endl;
+    cout << "               [-1]退出登录                   " << endl;
     cout << "---------------------------------------" << endl;
     cout << "请进行您的选择: ";
 }
@@ -103,7 +98,7 @@ void *Read(void *args)
     }
 }
 
-void FriendCHATONLINE(int sockfd, FirstRequset &req) //聊天
+void FriendCHATONLINE(int sockfd, FirstRequset &req) //在线聊天
 {
     //聊天之前我们要先知道用问在线与否，在线就聊天
     //这里先发送获取它是否在线
@@ -111,7 +106,7 @@ void FriendCHATONLINE(int sockfd, FirstRequset &req) //聊天
     req.fdfrom = sockfd;
 
     pthread_create(&reader, nullptr, Read, (void *)&req); //一进来就要去接收
-    
+
     cout << "请输入您要进行聊天的好友: ";
 
     cin >> req.tonickname;
@@ -129,7 +124,7 @@ void FriendCHATONLINE(int sockfd, FirstRequset &req) //聊天
     }
 }
 
-void FriendCHATUNONLINE(int sockfd, FirstRequset &req) //聊天
+void FriendCHATUNONLINE(int sockfd, FirstRequset &req) //不在线聊天
 {
     cout << "请输入您要进行聊天的好友: ";
     cin >> req.tonickname;
@@ -147,16 +142,44 @@ void FriendCHATUNONLINE(int sockfd, FirstRequset &req) //聊天
     }
 }
 
-
-void CheckUnReadMsg(int sockfd, FirstRequset &req)//查看未读消息
+void CheckUnReadMsg(int sockfd, FirstRequset &req) //查看未读消息
 {
     string msg = FirRequsetSerialize(req);
     send(sockfd, msg.c_str(), msg.size(), 0);
     RecvReSerializeMsg(sockfd);
     sleep(2);
-    // system("clear");
 }
 
+void GroupCREATE(int sockfd, FirstRequset &req) //创建群
+{
+    cout << "请输入您要创建的群的名称： ";
+    cin >> req.groupname;
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    RecvReSerializeMsg(sockfd);
+    sleep(2);
+    system("clear");
+}
+
+void GroupCHECK(int sockfd, FirstRequset &req) //查看我所有加入的群
+{
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    RecvReSerializeMsg(sockfd);
+    sleep(2);
+}
+
+void GroupCHECKMEMBERLIST(int sockfd, FirstRequset &req) //查看群成员列表
+{
+    cout << "请输入您要查看群成员的群的名称： ";
+    cin >> req.groupname;
+    string msg = FirRequsetSerialize(req);
+    send(sockfd, msg.c_str(), msg.size(), 0);
+    cout<<req.groupname<<"群的成员列表如下"<<endl;
+    RecvReSerializeMsg(sockfd);
+    sleep(5);
+    system("clear");
+}
 void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我们输入的名字和密码
 {
     sreq.ifonline = true;
@@ -185,17 +208,21 @@ void LoginChatRoom(int sockfd, FirstRequset &sreq) //这个里面就有之前我
         case FRIEND_CHECK_ONLINE:
             FriendCHECKONLINE(sockfd, sreq); //查看好友是否在线
             break;
-        case FRIEND_CHAT_UNONLINE:
-            FriendCHATUNONLINE(sockfd,sreq);
+        case FRIEND_CHAT_UNONLINE: //给不在线的用户用的
+            FriendCHATUNONLINE(sockfd, sreq);
         case GROUP_CREATE:
+            GroupCREATE(sockfd, sreq);
             break;
         case GROUP_ADD:
             break;
         case GROUP_QUIT:
             break;
         case GROUP_CHECK:
+            //查看已经加入的群
+            GroupCHECK(sockfd, sreq);
             break;
-        case GROUP_MANAGE:
+        case GROUP_MANAGE_VIEWMEMBERLIST://查看群成员
+            GroupCHECKMEMBERLIST(sockfd, sreq);
             break;
         case LEFTLOAD:
             LOADEXIT(sockfd, sreq);
