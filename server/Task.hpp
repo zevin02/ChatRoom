@@ -410,22 +410,22 @@ namespace ns_task
             _mrs.SetData(buf); //这样就添加进去了
         }
 
-        void HashFieldDel(string key,string field,string value)//删除哈希表里面的数据
+        void HashFieldDel(string key, string field, string value) //删除哈希表里面的数据
         {
             string buf = "hget " + key + " " + field;
             vector<string> list = _mrs.GetHashData(buf); //这个list里面存放的就是field里面对应的所有数据
-            
+
             //找到那个value，把那个数据给删除掉
-            auto it=list.begin();
-            while(it!=list.end())
+            auto it = list.begin();
+            while (it != list.end())
             {
-                if(*it==value)
+                if (*it == value)
                 {
-                    
+                    list.erase(it); //把这个管理员给删除掉
+                    break;
                 }
+                it++;
             }
-
-
             //再把它重新设置进去
             string buffer;
             for (int i = 0; i < list.size(); i++)
@@ -532,28 +532,89 @@ namespace ns_task
                     //查看我是不是这个群的管理员
                     buf = "hget " + req.groupname + " administrator"; //获得群管理员列表
                     string administratorlist = _mrs.GetAData(buf);
-                    if(administratorlist.find(req.tonickname)!=string::npos)//如果它是群管理,在里面找到名字
+                    if (administratorlist.find(req.tonickname) != string::npos) //如果它是群管理,在里面找到名字
                     {
                         //在里面找到了名字
                         //把群管理这个数据给删除掉
-
-
-
+                        HashFieldDel(req.groupname, "administrator", req.tonickname);
+                        rep.status = SUCCESS;
+                        rep.msg = "删除成功";
+                    }
+                    else
+                    {
+                        //它不是群管理
+                        rep.status = Failure;
+                        rep.msg = "      操作失败";
                     }
                 }
                 else
                 {
                     //我没加这个群
                     rep.status = Failure;
-                    rep.msg = "       添加失败";
+                    rep.msg = "       操作失败";
                 }
             }
             else
             {
                 //这个群不存在
                 rep.status = Failure;
-                rep.msg = "       添加失败";
+                rep.msg = "       操作失败";
             }
+            _mrs.disconnect();
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerGroupDELMEMBER(FirstRequset &req, int _sockfd) //删除群成员
+        {
+            //删除一个群成员
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "sismember ALLgroup " + req.groupname;
+            if (_mrs.isExist(buf)) //先检查这个群是否存在
+            {
+                //先检查一下我有没有加这个群
+                buf = "sismember " + req.nickname + "_group " + req.groupname;
+                if (_mrs.isExist(buf))
+                {
+                    //检查一下我是不是群主或者群管理员
+                    buf = "hget " + req.groupname + " lord"; //获得群主名
+                    string lordname = _mrs.GetAData(buf);
+                    buf = "hget " + req.groupname + " administrator"; //获得群管理员列表
+                    string administratorlist = _mrs.GetAData(buf);
+                    if (lordname.find(req.nickname) != string::npos || administratorlist.find(req.nickname) != string::npos)
+                    {
+                        //就把那个给删除掉
+                        HashFieldDel(req.groupname, "member", req.tonickname);
+                        //把成员就删除完了
+                        buf="srem "+req.tonickname+"_group "+req.groupname;
+                        cout<<__FILE__<<__LINE__<<buf<<endl;
+                        _mrs.DelData(buf);
+                        rep.status = SUCCESS;
+                        rep.msg = "删除成功";
+                        
+                    }
+                    else
+                    {
+                        rep.status = Failure;
+                        rep.msg = "      操作失败";
+                    }
+                }
+                else
+                {
+                    rep.status = Failure;
+                    rep.msg = "      操作失败";
+                }
+            }
+            else
+            {
+                //这个群不存在
+                rep.status = Failure;
+                rep.msg = "       操作失败";
+            }
+            _mrs.disconnect();
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
         //服务器判断是哪一种接收格式
@@ -638,8 +699,11 @@ namespace ns_task
                 case GROUP_MANAGE_ADDMANAGER: //添加一个群管理
                     ServerGroupADDMANAGER(req, _sockfd);
                     break;
-                case GROUP_MANAGE_DELMANAGER: //添加一个群管理
+                case GROUP_MANAGE_DELMANAGER: //删除一个群管理
                     ServerGroupDELMANAGER(req, _sockfd);
+                    break;
+                case GROUP_DELMEMBER: //删除一个群成员
+                    ServerGroupDELMEMBER(req, _sockfd);
                     break;
                 case LEFTLOAD:
                     cout << "quit" << endl;
