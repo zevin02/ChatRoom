@@ -76,6 +76,8 @@ struct FirstRequset//第一次给服务器发送的消息
     FirstRequset()=default;//生成默认构造函数
 };
 
+
+
 struct FirstResponse//服务器第一次发送
 {
     int status;//0表示成功，-1表示失败
@@ -84,14 +86,6 @@ struct FirstResponse//服务器第一次发送
 };
 
 
-// struct UnReadMsg//用户的未读缓冲区,上线的时候先查看这个缓冲区，看是否有消息
-// {
-//     string owner;//给谁发送的 
-//     string groupname;//来自哪个群
-//     string sendfromwho;//谁发送的
-//     queue<string> msg;//发送的消息队列
-//     int size;//未读消息
-// };
 
 
 

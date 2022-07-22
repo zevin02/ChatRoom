@@ -391,7 +391,26 @@ namespace ns_task
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
-        void ServerGroupADDMANAGER(FirstRequset &req, int _sockfd)
+        void HashFieldAdd(string key, string field, string value) //往哈希表里面添加数据
+        {
+            //先获得，再添加
+            string buf = "hget " + key + " " + field;
+            vector<string> list = _mrs.GetHashData(buf); //这个list里面存放的就是field里面对应的所有数据
+            //往这个list里面添加数据
+            list.push_back(value);
+            //再把它重新设置进去
+            string buffer;
+            for (int i = 0; i < list.size(); i++)
+            {
+                buffer += list[i];
+                if (i < list.size() - 1)
+                    buffer += "|";
+            }
+            buf = "hset " + key + " " + field + " " + buffer;
+            _mrs.SetData(buf); //这样就添加进去了
+        }
+
+        void ServerGroupADDMANAGER(FirstRequset &req, int _sockfd) //添加管理员
         {
             //删除一个群管理
             // 1.先从我的群列表看看有没有这个群
@@ -417,20 +436,21 @@ namespace ns_task
                     if (memberlist.find(req.tonickname) != string::npos && administratorlist.find(req.tonickname) == string::npos)
                     {
                         //是群成员但不是群管理员，就可以进行添加了
-                        buf = "hget " + req.groupname + " administrator";
-                        vector<string> adlist = _mrs.GetHashData(buf);
-                        //往这个list里面添加数据
-                        adlist.push_back(req.tonickname);
-                        //再把它重新设置进去
-                        string buffer;
-                        for (int i = 0; i < adlist.size(); i++)
-                        {
-                            buffer += adlist[i];
-                            if (i < adlist.size() - 1)
-                                buffer += "|";
-                        }
-                        buf = "hset " + req.groupname + " administrator " + buffer;
-                        _mrs.SetData(buf);
+                        // buf = "hget " + req.groupname + " administrator";
+                        // vector<string> adlist = _mrs.GetHashData(buf);
+                        // //往这个list里面添加数据
+                        // adlist.push_back(req.tonickname);
+                        // //再把它重新设置进去
+                        // string buffer;
+                        // for (int i = 0; i < adlist.size(); i++)
+                        // {
+                        //     buffer += adlist[i];
+                        //     if (i < adlist.size() - 1)
+                        //         buffer += "|";
+                        // }
+                        // buf = "hset " + req.groupname + " administrator " + buffer;
+                        // _mrs.SetData(buf);
+                        HashFieldAdd(req.groupname, "administrator", req.tonickname); //添加群管理
                         rep.status = SUCCESS;
                         rep.msg = "添加成功";
                     }
@@ -451,6 +471,34 @@ namespace ns_task
                 rep.status = Failure;
                 rep.msg = "      该群不存在";
             }
+            _mrs.disconnect();
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerGROUPADD(FirstRequset &req, int _sockfd) //加入一个群,现在默认它不是退出的那个群的群主或群管理员
+        {
+            FirstResponse rep;
+            //先检查这个群是否存在
+            _mrs.connect();
+            string buf = "sismember ALLgroup " + req.groupname;
+            if (_mrs.isExist(buf))
+            {
+                //这个群存在，
+                buf = "sadd " + req.nickname + "_group " + req.groupname;
+                _mrs.AddData(buf);
+                //在群列表里面也要添加这个成员
+                HashFieldAdd(req.groupname, "member", req.nickname);
+                rep.status = SUCCESS;
+                rep.msg = "       添加成功";
+            }
+            else
+            {
+                //这个群不存在
+                rep.status = Failure;
+                rep.msg = "       添加失败";
+            }
+            cout << __LINE__ << "   " << rep.msg << endl;
             _mrs.disconnect();
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0);
@@ -524,6 +572,7 @@ namespace ns_task
                     ServerGROUPCREATE(req, _sockfd);
                     break;
                 case GROUP_ADD: //申请加入一个群
+                    ServerGROUPADD(req, _sockfd);
                     break;
                 case GROUP_QUIT: //退出一个群
                     ServerGROUPQUIT(req, _sockfd);
@@ -537,7 +586,6 @@ namespace ns_task
                 case GROUP_MANAGE_ADDMANAGER: //添加一个群管理
                     ServerGroupADDMANAGER(req, _sockfd);
                     break;
-
                 case LEFTLOAD:
                     cout << "quit" << endl;
                     //在这里把对应的用户数据从里面删除掉
