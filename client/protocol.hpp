@@ -23,7 +23,7 @@
 #define FRIEND_CHAT   4
 #define FRIEND_CHECK_ONLINE       0
 #define FRIEND_CHAT_UNONLINE   8    //和不在线的好友进行聊天
-
+#define FRIEND_CHAT_HISTORY     11  //查看历史聊天记录
 
 
 //对群进行整体的处理
@@ -35,15 +35,16 @@
 
 
 
-//对某一个群进行操作，在group_manage里面
 #define GROUP_MANAGE_DELMEMBER        11//删除一个群成员
 #define GROUP_MANAGE_ADDMANAGER       12//添加一个管理员
-#define GROUP_MANAGE_DEL              13//作为群主解散一个群
+#define GROUP_MANAGE_DESTROY             13//作为群主解散一个群
 #define GROUP_MANAGE_CHAT             14//进行群聊天
 #define GROUP_MANAGE_DELMANAGER       15//删除群管理
 #define GROUP_MANAGE_VIEWMEMBERLIST   16//查看群成员列表
 #define GROUP_DELMEMBER               17//群主和群管理把群成员给删除掉
-
+#define GROUP_APPLY                   18//申请加入一个群
+#define GROUP_MEMBERADDEXECUTE        19//群主查看完消息之后执行加入成员
+#define GROUP_CHECKAPPLY              20//查看群申请消息 
 
 //用来区分发送的协议
 #define LOGINAFTER    0
