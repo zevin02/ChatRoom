@@ -248,6 +248,16 @@ namespace ns_task
         {
 
             FirstResponse rep;
+            //发送过来就能保存了
+            _mrs.connect();
+            //用list把这些数据保存起来
+            string info = req.nickname + ":" + req.message;
+            string buf = "rpush " + req.nickname + "_" + req.tonickname + "_chathistory " + info;
+
+            _mrs.AddData(buf);
+            buf = "rpush " + req.tonickname + "_" + req.nickname + "_chathistory " + info;
+            _mrs.AddData(buf);
+            _mrs.disconnect();
             //先判断是否在线，如果在线的话就直接发送了
             if (_chatinfo->IsExist(req.tonickname))
             {
@@ -258,8 +268,9 @@ namespace ns_task
                 rep.status = SUCCESS;
                 string msg = FirstResponseSerialize(rep);
                 int friendfd = _chatinfo->GetFriendFd(req.tonickname);
+                if(req.message=="exit")
+                send(_sockfd, msg.c_str(), msg.size(), 0);//给自己也发一个
 
-                cout << __FILE__ << __LINE__ << "对方的fd为: " << friendfd << "  " << msg << endl;
                 send(friendfd, msg.c_str(), msg.size(), 0);
             }
             else
@@ -286,10 +297,27 @@ namespace ns_task
                     rep.msg += _chatinfo->GetUnReadMsg(req.nickname);
                     rep.msg += "\n";
                 }
-                cout << __FILE__ << __LINE__ << rep.msg << endl;
                 string msg = FirstResponseSerialize(rep);
                 send(_sockfd, msg.c_str(), msg.size(), 0); //先告诉服务器有几条消息
             }
+        }
+
+        void ServerFriendCHATHISTORY(FirstRequset &req, int _sockfd) //查看历史聊天记录
+        {
+            //在他们的历史聊天记录的那个表里面读取就行了，用list来存着
+            FirstResponse rep;
+            _mrs.connect();
+            //我_它
+            string buf = "lrange " + req.nickname + "_" + req.tonickname + "_chathistory 0 -1";
+            vector<string> listdata = _mrs.GetListData(buf);
+            for (int i = 0; i < listdata.size(); i++)
+            {
+                rep.msg += listdata[i];
+                rep.msg += "\n";
+            }
+            rep.status = SUCCESS;
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0); //先告诉服务器有几条消息
         }
 
         void ServerGROUPCREATE(FirstRequset &req, int _sockfd) //创建群
@@ -838,6 +866,9 @@ namespace ns_task
                     break;
                 case FRIEND_CHECK_ONLINE: //查看好友在线情况
                     ServerFRIENDCHECKONLINE(req, _sockfd, _chatinfo);
+                    break;
+                case FRIEND_CHAT_HISTORY: //查看历史聊天记录
+                    ServerFriendCHATHISTORY(req, _sockfd);
                     break;
                 case GROUP_CREATE: //创建一个群
                     ServerGROUPCREATE(req, _sockfd);

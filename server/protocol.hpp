@@ -20,8 +20,8 @@
 #define FRIEND_DEL    3   
 #define FRIEND_CHAT_ONLINE   4
 #define FRIEND_CHAT_UNONLINE   8    //和不在线的好友进行聊天
-
 #define FRIEND_CHECK_ONLINE       0
+#define FRIEND_CHAT_HISTORY     11  //查看历史聊天记录
 
 
 
