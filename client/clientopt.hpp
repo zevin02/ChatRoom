@@ -11,7 +11,9 @@ void ClientLogin(FirstRequset &msg, int sockfd) //登录
     cout << "请输入您的昵称 :";
     cin >> msg.nickname;
     cout << "请输入您的密码 :";
+    system("stty -echo");
     cin >> msg.password;
+    system("stty echo");
     msg.logstatus = LOGINBEFORE;
 
     string req = FirRequsetSerialize(msg);
