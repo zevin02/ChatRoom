@@ -22,7 +22,7 @@
 #define FRIEND_CHAT_UNONLINE   8    //和不在线的好友进行聊天
 #define FRIEND_CHECK_ONLINE       0
 #define FRIEND_CHAT_HISTORY     11  //查看历史聊天记录
-
+#define FRIEND_SHIELD            22   //屏蔽好友的消息
 
 
 #define LEFTLOAD     -1
@@ -47,7 +47,7 @@
 #define GROUP_APPLY                   18//申请加入一个群
 #define GROUP_MEMBERADDEXECUTE        19//群主查看完消息之后执行加入成员
 #define GROUP_CHECKAPPLY              20//查看群申请消息 
-
+#define GROUP_CHAT                    21//群聊
 
 
 //用来区分发送的协议

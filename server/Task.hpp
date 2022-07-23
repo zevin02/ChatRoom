@@ -246,12 +246,15 @@ namespace ns_task
 
         void ServerFriendCHATONLINE(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo) //与在线好友进行聊天
         {
-
+            //1.先查看聊天的对象是不是把你屏蔽掉了，如果屏蔽掉的话，你发送
             FirstResponse rep;
             //发送过来就能保存了
+            
             _mrs.connect();
             //在好友列表里面先判断是不是好友
+            
             string buf = "sismember " + req.nickname + "_friend " + req.tonickname;
+
             if (_mrs.isExist(buf))
             {
                 //用list把这些数据保存起来
@@ -272,8 +275,8 @@ namespace ns_task
                     rep.status = SUCCESS;
                     string msg = FirstResponseSerialize(rep);
                     int friendfd = _chatinfo->GetFriendFd(req.tonickname);
-                    if (req.message == "exit")
-                        send(_sockfd, msg.c_str(), msg.size(), 0); //给自己也发一个
+                    // if (req.message == "exit")
+                    //     send(_sockfd, msg.c_str(), msg.size(), 0); //给自己也发一个
 
                     send(friendfd, msg.c_str(), msg.size(), 0);
                 }
@@ -291,12 +294,12 @@ namespace ns_task
                 rep.status = Failure;
                 rep.msg = "       你们不是好友关系无法聊天,请输入(exit)";
                 string msg = FirstResponseSerialize(rep);
-                string ret="exit";
-                send(_sockfd, msg.c_str(), msg.size(), 0);
-
-                send(_sockfd, ret.c_str(), ret.size(), 0);
-                
+                // string ret="exit";
                 // send(_sockfd, msg.c_str(), msg.size(), 0);
+
+                // send(_sockfd, ret.c_str(), ret.size(), 0);
+
+                send(_sockfd, msg.c_str(), msg.size(), 0);
             }
         }
 
@@ -333,6 +336,28 @@ namespace ns_task
                 rep.msg += "\n";
             }
             rep.status = SUCCESS;
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0); //先告诉服务器有几条消息
+        }
+        void ServerFriendShield(FirstRequset &req, int _sockfd) //屏蔽好友消息
+        {
+            //设计一个表,里面包含的就是我屏蔽的人
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "sismember " + req.nickname + "_friend " + req.tonickname;
+            if (_mrs.isExist(buf))
+            {
+                buf = "sadd " + req.nickname + "_shield " + req.tonickname; //某个人的屏蔽消息
+                _mrs.AddData(buf);
+                rep.status = SUCCESS;
+                rep.msg = "设置成功";
+            }
+            else
+            {
+                rep.status=Failure;
+                rep.msg="设置失败";
+            }
+            _mrs.disconnect();
             string msg = FirstResponseSerialize(rep);
             send(_sockfd, msg.c_str(), msg.size(), 0); //先告诉服务器有几条消息
         }
@@ -886,6 +911,9 @@ namespace ns_task
                     break;
                 case FRIEND_CHAT_HISTORY: //查看历史聊天记录
                     ServerFriendCHATHISTORY(req, _sockfd);
+                    break;
+                case FRIEND_SHIELD: //屏蔽好友的消息
+                    ServerFriendShield(req, _sockfd);
                     break;
                 case GROUP_CREATE: //创建一个群
                     ServerGROUPCREATE(req, _sockfd);
