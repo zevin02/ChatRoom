@@ -250,36 +250,53 @@ namespace ns_task
             FirstResponse rep;
             //发送过来就能保存了
             _mrs.connect();
-            //用list把这些数据保存起来
-            string info = req.nickname + ":" + req.message;
-            string buf = "rpush " + req.nickname + "_" + req.tonickname + "_chathistory " + info;
-
-            _mrs.AddData(buf);
-            buf = "rpush " + req.tonickname + "_" + req.nickname + "_chathistory " + info;
-            _mrs.AddData(buf);
-            _mrs.disconnect();
-            //先判断是否在线，如果在线的话就直接发送了
-            if (_chatinfo->IsExist(req.tonickname))
+            //在好友列表里面先判断是不是好友
+            string buf = "sismember " + req.nickname + "_friend " + req.tonickname;
+            if (_mrs.isExist(buf))
             {
-                //用户在线
-                //先给对方发送，谁要和你进行聊天
-                // rep.msg = req.nickname + " wanna chat with you";//这个我们只希望第一次想要和它聊天的时候发送
-                rep.msg = req.nickname + " : " + req.message;
-                rep.status = SUCCESS;
-                string msg = FirstResponseSerialize(rep);
-                int friendfd = _chatinfo->GetFriendFd(req.tonickname);
-                if(req.message=="exit")
-                send(_sockfd, msg.c_str(), msg.size(), 0);//给自己也发一个
+                //用list把这些数据保存起来
+                string info = req.nickname + ":" + req.message;
+                buf = "rpush " + req.nickname + "_" + req.tonickname + "_chathistory " + info;
 
-                send(friendfd, msg.c_str(), msg.size(), 0);
+                _mrs.AddData(buf);
+                buf = "rpush " + req.tonickname + "_" + req.nickname + "_chathistory " + info;
+                _mrs.AddData(buf);
+                _mrs.disconnect();
+                //先判断是否在线，如果在线的话就直接发送了
+                if (_chatinfo->IsExist(req.tonickname))
+                {
+                    //用户在线
+                    //先给对方发送，谁要和你进行聊天
+                    // rep.msg = req.nickname + " wanna chat with you";//这个我们只希望第一次想要和它聊天的时候发送
+                    rep.msg = req.nickname + " : " + req.message;
+                    rep.status = SUCCESS;
+                    string msg = FirstResponseSerialize(rep);
+                    int friendfd = _chatinfo->GetFriendFd(req.tonickname);
+                    if (req.message == "exit")
+                        send(_sockfd, msg.c_str(), msg.size(), 0); //给自己也发一个
+
+                    send(friendfd, msg.c_str(), msg.size(), 0);
+                }
+                else
+                {
+                    //用户不在线，我们就发送给数据库，等到对方上线之后先去读取这个
+                    //这里我们把数据修改一下
+                    string buff = req.nickname + " send message to you : " + req.message; //这个就是给没上线的好友发送的消息
+                    _chatinfo->UnReadBuf_Pushback(req.tonickname, buff);                  //不管对方有没有上线，只要往这里面加数据就可以了
+                    cout << "不在线" << endl;
+                }
             }
             else
             {
-                //用户不在线，我们就发送给数据库，等到对方上线之后先去读取这个
-                //这里我们把数据修改一下
-                string buff = req.nickname + " send message to you : " + req.message; //这个就是给没上线的好友发送的消息
-                _chatinfo->UnReadBuf_Pushback(req.tonickname, buff);                  //不管对方有没有上线，只要往这里面加数据就可以了
-                cout << "不在线" << endl;
+                rep.status = Failure;
+                rep.msg = "       你们不是好友关系无法聊天,请输入(exit)";
+                string msg = FirstResponseSerialize(rep);
+                string ret="exit";
+                send(_sockfd, msg.c_str(), msg.size(), 0);
+
+                send(_sockfd, ret.c_str(), ret.size(), 0);
+                
+                // send(_sockfd, msg.c_str(), msg.size(), 0);
             }
         }
 
