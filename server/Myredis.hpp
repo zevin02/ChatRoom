@@ -4,6 +4,7 @@
 using namespace std;
 #include <hiredis/hiredis.h>
 #include <vector>
+#include<map>
 class Myredis
 {
 private:
@@ -87,10 +88,34 @@ public:
         ret.push_back(buf);
         return ret;
     }
-
+    vector<string> GetListData(string command)//获得list里面的所有值
+    {
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
+        vector<string> ret;
+        for (int i = 0; i < pm_rr->elements; i++)
+        {
+            ret.push_back(pm_rr->element[i]->str);
+        }
+        return ret;
+    }
     void SetData(string command)
     {
         //设置数据库里面的数据
         pm_rr = (redisReply *)redisCommand(c, command.c_str());
+    }
+    map<string, string> GetGroupApplyInfo(string command) //获得申请加入群的名单，包含群+人
+    {
+        map<string, string> ret;
+        string key, value;
+        pm_rr = (redisReply *)redisCommand(c, command.c_str());
+        for (int i = 0; i < pm_rr->elements; i++)
+        {
+            string ll = pm_rr->element[i]->str;
+            size_t pos = ll.find("|");
+            value = ll.substr(0, pos);
+            key = ll.substr(pos + 1);
+            ret[key] = value;
+        }
+        return ret;
     }
 };

@@ -587,12 +587,11 @@ namespace ns_task
                         //就把那个给删除掉
                         HashFieldDel(req.groupname, "member", req.tonickname);
                         //把成员就删除完了
-                        buf="srem "+req.tonickname+"_group "+req.groupname;
-                        cout<<__FILE__<<__LINE__<<buf<<endl;
+                        buf = "srem " + req.tonickname + "_group " + req.groupname;
+                        cout << __FILE__ << __LINE__ << buf << endl;
                         _mrs.DelData(buf);
                         rep.status = SUCCESS;
                         rep.msg = "删除成功";
-                        
                     }
                     else
                     {
@@ -617,6 +616,165 @@ namespace ns_task
             send(_sockfd, msg.c_str(), msg.size(), 0);
         }
 
+        void ServerGroupDESTROY(FirstRequset &req, int _sockfd) //群主解散一个群
+        {
+            //解散一个群
+            /*
+            1.先判断有没有这个群
+            2.在判断是不是群主
+            3.获得这个群的所有成员，把他们的_group里面把这个群给删除掉
+            4.最后把这个群在ALLgroup里面删除掉
+
+            */
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "sismember ALLgroup " + req.groupname;
+            if (_mrs.isExist(buf)) //先检查这个群是否存在
+            {
+                buf = "hget " + req.groupname + " lord"; //获得群主名
+                string lordname = _mrs.GetAData(buf);
+                if (lordname.find(req.nickname) != string::npos)
+                {
+                    buf = "hget " + req.groupname + " member";
+                    vector<string> memberlist = _mrs.GetHashData(buf);
+                    for (int i = 0; i < memberlist.size(); i++)
+                    {
+                        buf = "srem " + memberlist[i] + "_group " + req.groupname;
+                        _mrs.DelData(buf);
+                    }
+                    buf = "srem ALLgroup " + req.groupname;
+                    _mrs.DelData(buf);
+                    //把这个表也直接删除掉
+                    buf = "del " + req.groupname;
+                    _mrs.DelData(buf);
+                    rep.status = SUCCESS;
+                    rep.msg = "销毁成功";
+                }
+                else
+                {
+                    rep.status = Failure;
+                    rep.msg = "      操作失败";
+                }
+            }
+            else
+            {
+                rep.status = Failure;
+                rep.msg = "      操作失败";
+            }
+            _mrs.disconnect();
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerGroupAPPLY(FirstRequset &req, int _sockfd) //用户去提交申请表
+        {
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "sismember ALLgroup " + req.groupname;
+            if (_mrs.isExist(buf)) //先检查这个群是否存在
+            {
+                //存在，看我有没有加入这个群
+                buf = "sismember " + req.nickname + "_group " + req.groupname;
+                if (_mrs.isExist(buf))
+                {
+                    //如果我已经存在，就不要加了
+                    rep.status = Failure;
+                    rep.msg = "      操作失败";
+                }
+                else
+                {
+                    //不存在，我们就要加入
+                    // 1.获得群主名
+                    buf = "hget " + req.groupname + " lord";
+                    string lordname = _mrs.GetAData(buf);
+                    // cout << __FILE__ << " " << __LINE__ << ":" << lordname<<endl;
+                    //建立一个表
+                    buf = "rpush " + lordname + "_groupapply " + req.groupname + "|" + req.nickname; //申请表,还要加上群名,告知要操作哪一个群,前面是申请的群，后面是申请的人
+                    _mrs.AddData(buf);
+                    rep.status = SUCCESS;
+                    rep.msg = "申请成功，等待群主同意";
+                }
+            }
+            else
+            {
+                rep.status = Failure;
+                rep.msg = "      操作失败";
+            }
+            _mrs.disconnect();
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerGroupCHECKAPPLY(FirstRequset &req, int _sockfd) //查看申请加入群的人
+        {
+            // 1.先检查这个申请人表存在与否
+            FirstResponse rep;
+            _mrs.connect();
+            string buf = "exists " + req.nickname + "_groupapply";
+            if (_mrs.isExist(buf))
+            {
+                //有消息
+                buf = "lrange " + req.nickname + "_groupapply 0 -1";
+
+                map<string, string> rr = _mrs.GetGroupApplyInfo(buf);
+                auto it = rr.begin();
+                while (it != rr.end())
+                {
+                    rep.msg += "申请人：" + it->first + "  " + "申请加入的群：" + it->second + "\n";
+                    it++;
+                }
+
+                rep.status = SUCCESS;
+            }
+            else
+            {
+                rep.status = Failure;
+                rep.msg = "      当前没有人申请加入群";
+            }
+            _mrs.disconnect();
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
+
+        void ServerGroupMEMBERADDEXECUTE(FirstRequset &req, int _sockfd) //我去执行把一个用户加到我的群里面
+        {
+            FirstResponse rep;
+            _mrs.connect();
+            //先到我的_groupapply获得消息
+            string buf = "exists " + req.nickname + "_groupapply";
+            if (_mrs.isExist(buf)) //先看看我的表有没有存在
+            {
+                //存在这个表,
+                //我们就把这个对象加到群里面了
+                buf = "lrange " + req.nickname + "_groupapply 0 -1";
+                map<string, string> applylist = _mrs.GetGroupApplyInfo(buf);
+                auto it = applylist.begin();
+                while (it != applylist.end())
+                {
+                    string applyname = it->first;   //申请人
+                    string applygroup = it->second; //申请人申请的群
+                    //这个申请人加入的群也要加上这个群
+                    buf = "sadd " + applyname + "_group " + applygroup;
+                    _mrs.AddData(buf);
+                    //往群列表里面添加这个人
+                    HashFieldAdd(applygroup, "member", applyname);
+                    it++;
+                }
+                //添加完再把这个表删除掉
+                buf = "del " + req.nickname + "_groupapply";
+                _mrs.DelData(buf);
+                rep.status = SUCCESS;
+                rep.msg = "       添加成功";
+            }
+            else
+            {
+                rep.status = Failure;
+                rep.msg = "      操作失败";
+            }
+            _mrs.disconnect();
+            string msg = FirstResponseSerialize(rep);
+            send(_sockfd, msg.c_str(), msg.size(), 0);
+        }
         //服务器判断是哪一种接收格式
         int Run() //执行任务
         {
@@ -690,7 +848,7 @@ namespace ns_task
                 case GROUP_QUIT: //退出一个群
                     ServerGROUPQUIT(req, _sockfd);
                     break;
-                case GROUP_CHECK:
+                case GROUP_CHECK: //查看已经加入的群
                     ServerGROUPCHECK(req, _sockfd);
                     break;
                 case GROUP_MANAGE_VIEWMEMBERLIST: //查看群成员列表
@@ -704,6 +862,18 @@ namespace ns_task
                     break;
                 case GROUP_DELMEMBER: //删除一个群成员
                     ServerGroupDELMEMBER(req, _sockfd);
+                    break;
+                case GROUP_MANAGE_DESTROY: //解散一个群
+                    ServerGroupDESTROY(req, _sockfd);
+                    break;
+                case GROUP_APPLY: //申请加入群
+                    ServerGroupAPPLY(req, _sockfd);
+                    break;
+                case GROUP_CHECKAPPLY: //查看申请加入群的人
+                    ServerGroupCHECKAPPLY(req, _sockfd);
+                    break;
+                case GROUP_MEMBERADDEXECUTE: //作为群主去执行把申请人加入群的操作,这里我们的操作是都同意
+                    ServerGroupMEMBERADDEXECUTE(req, _sockfd);
                     break;
                 case LEFTLOAD:
                     cout << "quit" << endl;
