@@ -246,14 +246,19 @@ namespace ns_task
 
         void ServerFriendCHATONLINE(FirstRequset &req, int _sockfd, ChatInfo *_chatinfo) //与在线好友进行聊天
         {
-            //1.先查看聊天的对象是不是把你屏蔽掉了，如果屏蔽掉的话，你发送
+            // 1.先查看tonic'kname_shield里面有没有你，如果有的话，就不要send过去
+
             FirstResponse rep;
             //发送过来就能保存了
-            
+
             _mrs.connect();
             //在好友列表里面先判断是不是好友
-            
-            string buf = "sismember " + req.nickname + "_friend " + req.tonickname;
+            bool flag = false;
+            string buf = "sismember " + req.tonickname + "_shield " + req.nickname; //检查对方的shield里面有没有你
+            if (_mrs.isExist(buf))
+                flag = true; //有你
+
+            buf = "sismember " + req.nickname + "_friend " + req.tonickname;
 
             if (_mrs.isExist(buf))
             {
@@ -278,7 +283,13 @@ namespace ns_task
                     // if (req.message == "exit")
                     //     send(_sockfd, msg.c_str(), msg.size(), 0); //给自己也发一个
 
-                    send(friendfd, msg.c_str(), msg.size(), 0);
+                    //把你屏蔽的话，就不要发送了
+                    if (!flag)
+                        send(friendfd, msg.c_str(), msg.size(), 0);
+                    if (flag && req.message == "exit")//屏蔽了同时发送exit的话，也发送给对方
+                    {
+                        send(friendfd, msg.c_str(), msg.size(), 0);
+                    }
                 }
                 else
                 {
@@ -354,8 +365,8 @@ namespace ns_task
             }
             else
             {
-                rep.status=Failure;
-                rep.msg="设置失败";
+                rep.status = Failure;
+                rep.msg = "设置失败";
             }
             _mrs.disconnect();
             string msg = FirstResponseSerialize(rep);
